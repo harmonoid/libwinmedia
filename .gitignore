@@ -1,0 +1,27 @@
+
+# External libraries.
+
+external
+
+# Visual Studio files.
+
+*.sln
+*.vcxproj
+*.vcxproj.filters
+
+# Executables 
+
+*.exe
+
+# Cmake generated files.
+
+*.dir
+CMakeFiles
+Debug
+x64
+CMakeCache.txt
+cmake_install.cmake
+
+# Visual Studio Code related files.
+
+.vscode
