@@ -1,13 +1,12 @@
-
-# **********************************************************************
-# * Project     : WinMediaLib                                          *
-# * Description : A media playback library in C++.                     *
-# * License     : MIT                                                  *
-# *                                                                    *
-# * Author      : Hitesh Kumar Saini                                   *
-# * Email       : alexmercerind@gmail.com; saini123hitesh@gmail.com    *
-# * GitHub      : https://github.com/alexmercerind                     *
-# **********************************************************************
+# ***********************************************************************************
+# * Project     : WinMediaLib                                                       *
+# * Description : A media playback, metadata, recording & broadcast library in C++. *
+# * License     : MIT                                                               *
+# *                                                                                 *
+# * Author      : Hitesh Kumar Saini                                                *
+# * Email       : saini123hitesh@gmail.com; alexmercerind@gmail.com                 *
+# * GitHub      : https://github.com/alexmercerind                                  *
+# ***********************************************************************************
 
 
 cmake_minimum_required(VERSION 3.15)
