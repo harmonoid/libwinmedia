@@ -1,5 +1,5 @@
 /***********************************************************************************
- * Project     : WinMediaLib                                                       *
+ * Project     : WinMediaLib                                                     *
  * Description : A media playback, metadata, recording & broadcast library in C++. *
  * License     : MIT                                                               *
  *                                                                                 *
@@ -29,8 +29,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifndef WIN_MEDIA_LIB
-#define WIN_MEDIA_LIB
+#ifndef WIN_MEDIA_LIB_DLL
+#define WIN_MEDIA_LIB_DLL
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage;
@@ -41,7 +41,7 @@ std::vector<Playback::MediaPlayer> players;
 std::vector<Core::MediaSource> medias;
 bool systemMediaTransportControlsExist = false;
 
-namespace WinMediaLibInternal {
+namespace Internal {
     
     /// Player
 

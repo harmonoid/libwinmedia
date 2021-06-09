@@ -14,14 +14,14 @@
 #define UNICODE
 #define _UNICODE
 #endif
-#ifndef WIN_MEDIA_LIB
-#define WIN_MEDIA_LIB
+#ifndef INTERNAL_HEADER
+#define INTERNAL_HEADER
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-namespace WinMediaLibInternal {
+namespace Internal {
 
     int Player_create();
 
