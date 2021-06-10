@@ -5,13 +5,16 @@ external
 
 # Visual Studio files.
 
+*.vs
 *.sln
 *.vcxproj
 *.vcxproj.filters
+*.user
 
 # Executables 
 
 *.exe
+out
 
 # Cmake generated files.
 
