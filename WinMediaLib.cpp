@@ -1,5 +1,5 @@
 /***********************************************************************************
- * Project     : WinMediaLib                                                     *
+ * Project     : WinMediaLib                                                       *
  * Description : A media playback, metadata, recording & broadcast library in C++. *
  * License     : MIT                                                               *
  *                                                                                 *
@@ -10,16 +10,23 @@
 
 #include <iostream>
 #include <thread>
+#include <string>
+#include <cwchar>
 #include <vector>
 #include <map>
 
 #include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Storage.FileProperties.h>
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.Media.Core.h>
 #include <winrt/Windows.Media.Playback.h>
 #include <winrt/Windows.Media.Playlists.h>
 #include <winrt/Windows.Media.Audio.h>
 #include <winrt/Windows.System.h>
+
+#define TAG_SIZE 200
+#define TO_SECONDS(timespan) timespan.count() / 10000000
 
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
@@ -97,7 +104,7 @@ namespace Internal {
     }
 
     EXPORT int32_t Player_getPosition(int32_t id) {
-        return players[id].Position().count();
+        return TO_SECONDS(players[id].Position());
     }
 
     EXPORT float Player_getVolume(int32_t id) {
@@ -136,7 +143,7 @@ namespace Internal {
         );
     }
 
-    EXPORT void Player_SystemMediaTransportControls_create(int32_t id, void (*callback)(int32_t button)) {
+    EXPORT void Player_NativeControls_create(int32_t id, void (*callback)(int32_t button)) {
         if (systemMediaTransportControlsExist) return;
         systemMediaTransportControlsExist = true;
         SystemMediaTransportControls controls = players[id].SystemMediaTransportControls();
@@ -154,15 +161,14 @@ namespace Internal {
         );
     }
 
-    EXPORT void Player_SystemMediaTransportControls_setState(int32_t id, const bool* state) {
-        SystemMediaTransportControls controls = players[id].SystemMediaTransportControls();
-        controls.IsPlayEnabled(state[0]);
-        controls.IsPauseEnabled(state[1]);
-        controls.IsNextEnabled(state[2]);
-        controls.IsPreviousEnabled(state[3]);
+    EXPORT void Player_NativeControls_setStatus(int32_t id, int32_t status) {
+        SystemMediaTransportControls controls = Playback::BackgroundMediaPlayer::Current().SystemMediaTransportControls();
+        controls.PlaybackStatus(
+            static_cast<MediaPlaybackStatus>(status)
+        );
     }
 
-    EXPORT void Player_SystemMediaTransportControls_update(int32_t id, int32_t type, const wchar_t** data, const wchar_t* thumbnail) {
+    EXPORT void Player_NativeControls_update(int32_t id, int32_t type, const wchar_t** data, const wchar_t* thumbnail) {
         SystemMediaTransportControls controls = players[id].SystemMediaTransportControls();
         SystemMediaTransportControlsDisplayUpdater updater = controls.DisplayUpdater();
         updater.Type(static_cast<MediaPlaybackType>(type));
@@ -190,12 +196,12 @@ namespace Internal {
         updater.Update();
     }
 
-    EXPORT void Player_SystemMediaTransportControls_clear(int32_t id) {
+    EXPORT void Player_NativeControls_clear(int32_t id) {
         SystemMediaTransportControls controls = players[id].SystemMediaTransportControls();
         controls.DisplayUpdater().ClearAll();
     }
 
-    EXPORT void Player_SystemMediaTransportControls_dispose(int32_t id) {
+    EXPORT void Player_NativeControls_dispose(int32_t id) {
         players[id].SystemMediaTransportControls().IsEnabled(false);
     }
 
@@ -227,9 +233,129 @@ namespace Internal {
         );
     }
 
-    /// SystemMediaTransportControls
+    /// Tags
 
-    EXPORT void SystemMediaTransportControls_create(void (*callback)(int32_t button)) {
+    EXPORT wchar_t** Tags_fromMusic(const wchar_t* uri) {
+        FileProperties::StorageItemContentProperties properties = StorageFile::GetFileFromPathAsync(uri).get().Properties();
+        FileProperties::MusicProperties music = properties.GetMusicPropertiesAsync().get();
+        std::wstring string = L"";
+        wchar_t** tags = new wchar_t*[16];
+        for (int32_t index = 0; index < 16; index++) tags[index] = new wchar_t[TAG_SIZE];
+        wcscpy_s(tags[0], TAG_SIZE, music.Album().data());
+        wcscpy_s(tags[1], TAG_SIZE, music.AlbumArtist().data());
+        wcscpy_s(tags[2], TAG_SIZE, std::to_wstring(music.Bitrate()).data());
+        Collections::IVector<winrt::hstring> composers = music.Composers();
+        for (int32_t index = 0; index < composers.Size(); index++) {
+            string += composers.GetAt(index).data();
+            string += L" ";
+        }
+        wcscpy_s(tags[3], TAG_SIZE, string.data());
+        string.clear();
+        Collections::IVector<winrt::hstring> conductors = music.Conductors();
+        for (int32_t index = 0; index < conductors.Size(); index++) {
+            string += conductors.GetAt(index).data();
+            string += L" ";
+        }
+        wcscpy_s(tags[4], TAG_SIZE, string.data());
+        string.clear();
+        wcscpy_s(tags[5], TAG_SIZE, std::to_wstring(TO_SECONDS(music.Duration())).data());
+        Collections::IVector<winrt::hstring> genre = music.Genre();
+        for (int32_t index = 0; index < genre.Size(); index++) {
+            string += genre.GetAt(index).data();
+            string += L" ";
+        }
+        wcscpy_s(tags[6], TAG_SIZE, string.c_str());
+        string.clear();
+        Collections::IVector<winrt::hstring> producers = music.Genre();
+        for (int32_t index = 0; index < producers.Size(); index++) {
+            string += producers.GetAt(index).data();
+            string += L" ";
+        }
+        wcscpy_s(tags[7], TAG_SIZE, string.c_str());
+        string.clear();
+        wcscpy_s(tags[8], TAG_SIZE, music.Publisher().data());
+        wcscpy_s(tags[9], TAG_SIZE, std::to_wstring(music.Rating()).data());
+        wcscpy_s(tags[10], TAG_SIZE, music.Subtitle().data());
+        wcscpy_s(tags[11], TAG_SIZE, music.Title().data());
+        wcscpy_s(tags[12], TAG_SIZE, std::to_wstring(music.TrackNumber()).data());
+        wcscpy_s(tags[13], TAG_SIZE, music.Publisher().data());
+        Collections::IVector<winrt::hstring> writers = music.Genre();
+        for (int32_t index = 0; index < writers.Size(); index++) {
+            string += writers.GetAt(index).data();
+            string += L" ";
+        }
+        wcscpy_s(tags[14], TAG_SIZE, string.data());
+        string.clear();
+        wcscpy(tags[15], std::to_wstring(music.Year()).data());
+        return tags;
+    }
+
+    EXPORT wchar_t** Tags_fromVideo(const wchar_t* uri) {
+        FileProperties::StorageItemContentProperties properties = StorageFile::GetFileFromPathAsync(uri).get().Properties();
+        FileProperties::VideoProperties video = properties.GetVideoPropertiesAsync().get();
+        std::wstring string = L"";
+        wchar_t** tags = new wchar_t* [16];
+        for (int32_t index = 0; index < 16; index++) tags[index] = new wchar_t[TAG_SIZE];
+        wcscpy_s(tags[0], TAG_SIZE, std::to_wstring(video.Bitrate()).data());
+        Collections::IVector<winrt::hstring> directors = video.Directors();
+        for (int32_t index = 0; index < directors.Size(); index++) {
+            string += directors.GetAt(index).data();
+            string += L" ";
+        }
+        wcscpy_s(tags[1], TAG_SIZE, string.data());
+        string.clear();
+        wcscpy_s(tags[2], TAG_SIZE, std::to_wstring(TO_SECONDS(video.Duration())).data());
+        wcscpy_s(tags[3], TAG_SIZE, std::to_wstring(video.Height()).data());
+        Collections::IVector<winrt::hstring> keywords = video.Keywords();
+        for (int32_t index = 0; index < keywords.Size(); index++) {
+            string += keywords.GetAt(index).data();
+            string += L" ";
+        }
+        wcscpy_s(tags[4], TAG_SIZE, string.data());
+        string.clear();
+        wcscpy_s(tags[5], TAG_SIZE, L"-1");
+        wcscpy_s(tags[6], TAG_SIZE, L"-1");
+        wcscpy_s(tags[7], TAG_SIZE, std::to_wstring(static_cast<uint32_t>(video.Orientation())).data());
+        Collections::IVector<winrt::hstring> producers = video.Producers();
+        for (int32_t index = 0; index < producers.Size(); index++) {
+            string += producers.GetAt(index).data();
+            string += L" ";
+        }
+        wcscpy_s(tags[8], TAG_SIZE, string.c_str());
+        string.clear();
+        wcscpy_s(tags[9], TAG_SIZE, video.Publisher().data());
+        wcscpy_s(tags[10], TAG_SIZE, std::to_wstring(video.Rating()).data());
+        wcscpy_s(tags[11], TAG_SIZE, video.Subtitle().data());
+        wcscpy_s(tags[12], TAG_SIZE, video.Title().data());
+        wcscpy_s(tags[13], TAG_SIZE, std::to_wstring(video.Width()).data());
+        Collections::IVector<winrt::hstring> writers = video.Writers();
+        for (int32_t index = 0; index < writers.Size(); index++) {
+            string += writers.GetAt(index).data();
+            string += L" ";
+        }
+        wcscpy_s(tags[14], TAG_SIZE, string.c_str());
+        string.clear();
+        wcscpy_s(tags[15], TAG_SIZE, std::to_wstring(video.Year()).data());
+        return tags;
+    }
+
+    EXPORT void Tags_extractThumbnail(const wchar_t* source, const wchar_t* save, const wchar_t* fileName, int32_t mode, int32_t size) {
+        StorageFile sourceFile = StorageFile::GetFileFromPathAsync(source).get();
+        StorageFolder saveFolder = StorageFolder::GetFolderFromPathAsync(save).get();
+        saveFolder.CreateFileAsync(fileName, CreationCollisionOption::ReplaceExisting).get();
+        StorageFile saveFile = saveFolder.GetFileAsync(fileName).get();
+        FileProperties::StorageItemThumbnail thumbnail = sourceFile.GetThumbnailAsync(
+            static_cast<FileProperties::ThumbnailMode>(mode),
+            size
+        ).get();
+        Streams::Buffer thumbnailBytes = Streams::Buffer(thumbnail.Size());
+        thumbnail.ReadAsync(thumbnailBytes, thumbnail.Size(), Streams::InputStreamOptions::ReadAhead).get();
+        FileIO::WriteBufferAsync(saveFile, thumbnailBytes).get();
+    }
+
+    /// NativeControls
+
+    EXPORT void NativeControls_create(void (*callback)(int32_t button)) {
         if (systemMediaTransportControlsExist) return;
         systemMediaTransportControlsExist = true;
         SystemMediaTransportControls controls = Playback::BackgroundMediaPlayer::Current().SystemMediaTransportControls();
@@ -247,15 +373,14 @@ namespace Internal {
         );
     }
 
-    EXPORT void SystemMediaTransportControls_setState(const bool* state) {
+    EXPORT void NativeControls_setStatus(int32_t status) {
         SystemMediaTransportControls controls = Playback::BackgroundMediaPlayer::Current().SystemMediaTransportControls();
-        controls.IsPlayEnabled(state[0]);
-        controls.IsPauseEnabled(state[1]);
-        controls.IsNextEnabled(state[2]);
-        controls.IsPreviousEnabled(state[3]);
+        controls.PlaybackStatus(
+            static_cast<MediaPlaybackStatus>(status)
+        );
     }
 
-    EXPORT void SystemMediaTransportControls_update(int32_t type, const wchar_t** data, const wchar_t* thumbnail) {
+    EXPORT void NativeControls_update(int32_t type, const wchar_t** data, const wchar_t* thumbnail) {
         SystemMediaTransportControls controls = Playback::BackgroundMediaPlayer::Current().SystemMediaTransportControls();
         SystemMediaTransportControlsDisplayUpdater updater = controls.DisplayUpdater();
         updater.Type(static_cast<MediaPlaybackType>(type));
@@ -283,12 +408,12 @@ namespace Internal {
         updater.Update();
     }
 
-    EXPORT void SystemMediaTransportControls_clear() {
+    EXPORT void NativeControls_clear() {
         SystemMediaTransportControls controls = Playback::BackgroundMediaPlayer::Current().SystemMediaTransportControls();
         controls.DisplayUpdater().ClearAll();
     }
 
-    EXPORT void SystemMediaTransportControls_dispose() {
+    EXPORT void NativeControls_dispose() {
         Playback::BackgroundMediaPlayer::Current().SystemMediaTransportControls().IsEnabled(false);
     }
 }
