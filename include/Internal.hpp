@@ -1,13 +1,3 @@
-/***********************************************************************************
- * Project     : WinMediaLib                                                       *
- * Description : A media playback, metadata, recording & broadcast library in C++. *
- * License     : MIT                                                               *
- *                                                                                 *
- * Author      : Hitesh Kumar Saini                                                *
- * Email       : saini123hitesh@gmail.com; alexmercerind@gmail.com                 *
- * GitHub      : https://github.com/alexmercerind                                  *
- ***********************************************************************************/
-
 #include <cstdint>
 
 #ifndef UNICODE
@@ -53,15 +43,15 @@ namespace Internal {
 
     void Player_setRateEventHandler(int32_t id, void (*callback)(float rate));
 
-    void Player_SystemMediaTransportControls_create(int32_t id, void (*callback)(int32_t button));
+    void Player_NativeControls_create(int32_t id, void (*callback)(int32_t button));
 
-    void Player_SystemMediaTransportControls_setState(int32_t id, const bool* state);
+    void Player_NativeControls_setStatus(int32_t id, int32_t status);
 
-    void Player_SystemMediaTransportControls_update(int32_t id, int32_t type, const wchar_t** data, const wchar_t* thumbnail);
+    void Player_NativeControls_update(int32_t id, int32_t type, const wchar_t** data, const wchar_t* thumbnail);
 
-    void Player_SystemMediaTransportControls_clear(int32_t id);
+    void Player_NativeControls_clear(int32_t id);
 
-    void Player_SystemMediaTransportControls_dispose(int32_t id);
+    void Player_NativeControls_dispose(int32_t id);
 
     int32_t Media_create(const wchar_t* uri, bool parse = false);
 
@@ -69,17 +59,24 @@ namespace Internal {
 
     int32_t Media_getDuration(int32_t id);
 
+    wchar_t** Tags_fromMusic(const wchar_t* uri);
+
+    wchar_t** Tags_fromVideo(const wchar_t* uri);
+
+    void Tags_extractThumbnail(const wchar_t* source, const wchar_t* save, const wchar_t* fileName, int32_t mode, int32_t size);
+
     void Media_setParseEventHandler(int32_t id, void (*callback)(int32_t parse));
 
-    void SystemMediaTransportControls_create(void (*callback)(int32_t button));
+    void NativeControls_create(void (*callback)(int32_t button));
 
-    void SystemMediaTransportControls_setState(const bool* state);
+    void NativeControls_setStatus(int32_t state);
 
-    void SystemMediaTransportControls_update(int32_t type, const wchar_t** data, const wchar_t* thumbnail);
+    void NativeControls_update(int32_t type, const wchar_t** data, const wchar_t* thumbnail);
 
-    void SystemMediaTransportControls_clear();
+    void NativeControls_clear();
 
-    void SystemMediaTransportControls_dispose();
+    void NativeControls_dispose();
+
 }
 
 

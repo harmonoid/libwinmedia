@@ -1,13 +1,3 @@
-/***********************************************************************************
- * Project     : WinMediaLib                                                       *
- * Description : A media playback, metadata, recording & broadcast library in C++. *
- * License     : MIT                                                               *
- *                                                                                 *
- * Author      : Hitesh Kumar Saini                                                *
- * Email       : saini123hitesh@gmail.com; alexmercerind@gmail.com                 *
- * GitHub      : https://github.com/alexmercerind                                  *
- ***********************************************************************************/
-
 #include <iostream>
 #include <thread>
 #include <string>
@@ -44,9 +34,9 @@ using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Media;
 using namespace winrt::Windows::System;
 
-std::vector<Playback::MediaPlayer> players;
-std::vector<Core::MediaSource> medias;
-bool systemMediaTransportControlsExist = false;
+static std::vector<Playback::MediaPlayer> players;
+static std::vector<Core::MediaSource> medias;
+static bool systemMediaTransportControlsExist;
 
 namespace Internal {
     
@@ -172,7 +162,7 @@ namespace Internal {
         SystemMediaTransportControls controls = players[id].SystemMediaTransportControls();
         SystemMediaTransportControlsDisplayUpdater updater = controls.DisplayUpdater();
         updater.Type(static_cast<MediaPlaybackType>(type));
-        if (type == 1) {
+        if (type == 0) {
             MusicDisplayProperties properties = updater.MusicProperties();
             properties.AlbumArtist(data[0]);
             properties.AlbumTitle(data[1]);
@@ -181,7 +171,7 @@ namespace Internal {
             properties.Title(data[4]);
             properties.TrackNumber(std::stoi(data[5]));
         }
-        else if (type == 2) {
+        else if (type == 1) {
             VideoDisplayProperties properties = updater.VideoProperties();
             properties.Title(data[0]);
             properties.Subtitle(data[1]);
@@ -239,8 +229,8 @@ namespace Internal {
         FileProperties::StorageItemContentProperties properties = StorageFile::GetFileFromPathAsync(uri).get().Properties();
         FileProperties::MusicProperties music = properties.GetMusicPropertiesAsync().get();
         std::wstring string = L"";
-        wchar_t** tags = new wchar_t*[16];
-        for (int32_t index = 0; index < 16; index++) tags[index] = new wchar_t[TAG_SIZE];
+        wchar_t** tags = new wchar_t*[15];
+        for (int32_t index = 0; index < 15; index++) tags[index] = new wchar_t[TAG_SIZE];
         wcscpy_s(tags[0], TAG_SIZE, music.Album().data());
         wcscpy_s(tags[1], TAG_SIZE, music.AlbumArtist().data());
         wcscpy_s(tags[2], TAG_SIZE, std::to_wstring(music.Bitrate()).data());
@@ -266,7 +256,7 @@ namespace Internal {
         }
         wcscpy_s(tags[6], TAG_SIZE, string.c_str());
         string.clear();
-        Collections::IVector<winrt::hstring> producers = music.Genre();
+        Collections::IVector<winrt::hstring> producers = music.Producers();
         for (int32_t index = 0; index < producers.Size(); index++) {
             string += producers.GetAt(index).data();
             string += L" ";
@@ -278,15 +268,14 @@ namespace Internal {
         wcscpy_s(tags[10], TAG_SIZE, music.Subtitle().data());
         wcscpy_s(tags[11], TAG_SIZE, music.Title().data());
         wcscpy_s(tags[12], TAG_SIZE, std::to_wstring(music.TrackNumber()).data());
-        wcscpy_s(tags[13], TAG_SIZE, music.Publisher().data());
-        Collections::IVector<winrt::hstring> writers = music.Genre();
+        Collections::IVector<winrt::hstring> writers = music.Writers();
         for (int32_t index = 0; index < writers.Size(); index++) {
             string += writers.GetAt(index).data();
             string += L" ";
         }
-        wcscpy_s(tags[14], TAG_SIZE, string.data());
+        wcscpy_s(tags[13], TAG_SIZE, string.data());
         string.clear();
-        wcscpy(tags[15], std::to_wstring(music.Year()).data());
+        wcscpy(tags[14], std::to_wstring(music.Year()).data());
         return tags;
     }
 
