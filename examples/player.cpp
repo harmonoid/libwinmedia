@@ -1,4 +1,4 @@
-#include "../Include/LibWinMedia.hpp"
+#include "../include/libwinmedia.hpp"
 
 #include <iostream>
 #include <string>
@@ -9,7 +9,7 @@ using namespace std;
 
 int32_t main(int argc, const char* argv[]) {
     if (argc < 2) {
-        cout << "No input provided.\n"
+        cout << "No media provided.\n"
         << "Example Usage:\n"
         << argv[0] << " file://C:/Music/MySong.mp3\n"
         << argv[0] << " https://www.example.com/MyVideo.mp4\n";

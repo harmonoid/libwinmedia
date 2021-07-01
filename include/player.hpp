@@ -10,13 +10,13 @@ extern "C" {
 
 namespace WinMedia {
 
-
+/// Creates a new `Player` instance for `Media` playback.
 class Player {
 public:
     Player() {
         this->id = Internal::Player_create();
     }
-
+    
     void open(Media media) {
         Internal::Player_open(this->id, media.id);
     }
