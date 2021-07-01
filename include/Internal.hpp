@@ -13,7 +13,7 @@ extern "C" {
 
 namespace Internal {
 
-    int Player_create();
+    int32_t Player_create();
 
     void Player_dispose(int32_t id);
 
@@ -27,17 +27,15 @@ namespace Internal {
 
     void Player_setRate(int32_t id, float rate);
 
-    int32_t Player_getVolume(int32_t id);
-
     int32_t Player_getRate(int32_t id);
 
     int32_t Player_getPosition(int32_t id);
 
-    int32_t Player_getVolume(int32_t id);
+    float Player_getVolume(int32_t id);
 
-    bool Player_getAutoplay(int32_t id);
+    bool Player_isAutoplay(int32_t id);
 
-    bool Player_getIsLooping(int32_t id);
+    bool Player_isLooping(int32_t id);
 
     void Player_setVolumeEventHandler(int32_t id, void (*callback)(float volume));
 

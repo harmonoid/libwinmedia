@@ -109,11 +109,11 @@ namespace Internal {
         return players[id].AudioBalance();
     }
 
-    EXPORT bool Player_getAutoplay(int32_t id) {
+    EXPORT bool Player_isAutoplay(int32_t id) {
         return players[id].AutoPlay();
     }
 
-    EXPORT bool Player_getIsLooping(int32_t id) {
+    EXPORT bool Player_isLooping(int32_t id) {
         return players[id].IsLoopingEnabled();
     }
 
