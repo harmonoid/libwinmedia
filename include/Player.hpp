@@ -8,6 +8,9 @@ extern "C" {
 #endif
 
 
+namespace WinMedia {
+
+
 class Player {
 public:
     Player() {
@@ -61,6 +64,9 @@ public:
 private:
     int32_t id;
 };
+
+
+}
 
 
 #ifdef __cplusplus

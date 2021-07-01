@@ -8,6 +8,10 @@
 extern "C" {
 #endif
 
+
+namespace WinMedia {
+
+
 static bool nativeControlsExist;
 
 
@@ -50,6 +54,9 @@ private:
         );
     }
 };
+
+
+}
 
 
 #ifdef __cplusplus

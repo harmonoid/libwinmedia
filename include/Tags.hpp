@@ -10,6 +10,9 @@ extern "C" {
 #endif
 
 
+namespace WinMedia {
+
+
 class Tags;
 
 /// Metadata tags of a music media.
@@ -136,6 +139,9 @@ public:
         );
     }
 };
+
+
+}
 
 
 #ifdef __cplusplus

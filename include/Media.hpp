@@ -9,6 +9,9 @@ extern "C" {
 #endif
 
 
+namespace WinMedia {
+
+
 class Player;
 
 
@@ -32,6 +35,8 @@ private:
     friend class Player;
 };
 
+
+}
 
 #ifdef __cplusplus
 }
