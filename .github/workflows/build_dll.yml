@@ -1,0 +1,37 @@
+name: Build DLL for testing
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  windows:
+    runs-on: windows-2019
+
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v1
+    
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v1.9
+      with:
+        cmake-version: '3.16.x'
+    
+    - name: Get cmake version
+      run: cmake --version
+    
+    - name: List all files
+      run: ls .
+    
+    - name: Build cmake files
+      run: cmake .
+    
+    - name: Build DLL
+      run: cmake --build .
+    
+    - name: Upload files
+      uses: actions/upload-artifact@v2
+      with:
+        name: libwinmedia-dll
+        path: Debug/libwinmedia.dll
