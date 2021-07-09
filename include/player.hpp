@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 
-namespace WinMedia {
+namespace wm {
 
 /// Creates a new `Player` instance for `Media` playback.
 class Player {

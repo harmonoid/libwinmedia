@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-namespace WinMedia {
+namespace wm {
 
 
 static bool nativeControlsExist;

@@ -16,7 +16,7 @@
 #include <winrt/Windows.System.h>
 
 #define TAG_SIZE 200
-#define TO_SECONDS(timespan) timespan.count() / 10000000
+#define TO_MILLISECONDS(timespan) timespan.count() / 10000
 
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
@@ -40,12 +40,13 @@ static bool systemMediaTransportControlsExist;
 
 namespace Internal {
     
-    /// Player
+    /* Player */
 
     EXPORT int32_t Player_create() {
         int32_t id = players.size();
         Playback::MediaPlayer player = Playback::MediaPlayer();
         players.emplace_back(player);
+        players[id].SystemMediaTransportControls().IsEnabled(false);
         return id;
     }
 
@@ -94,7 +95,7 @@ namespace Internal {
     }
 
     EXPORT int32_t Player_getPosition(int32_t id) {
-        return TO_SECONDS(players[id].Position());
+        return TO_MILLISECONDS(players[id].Position());
     }
 
     EXPORT float Player_getVolume(int32_t id) {
@@ -195,14 +196,14 @@ namespace Internal {
         players[id].SystemMediaTransportControls().IsEnabled(false);
     }
 
-    /// Media
+    /* Media */
 
     EXPORT int32_t Media_create(const wchar_t* uri, bool parse = false) {
         int32_t id = medias.size();
         Core::MediaSource media = Core::MediaSource::CreateFromUri(
             Uri(uri)
         );
-        if (parse) media.OpenAsync();
+        if (parse) media.OpenAsync().get();
         medias.emplace_back(media);
         return id;
     }
@@ -212,15 +213,7 @@ namespace Internal {
     }
 
     EXPORT int32_t Media_getDuration(int32_t id) {
-        return medias[id].Duration().GetInt32();
-    }
-
-    EXPORT void Media_setParseEventHandler(int32_t id, void (*callback)(int32_t parse)) {
-        medias[id].StateChanged(
-            [=](auto, const Core::MediaSourceStateChangedEventArgs& args) -> void {
-                (*callback)(static_cast<int32_t>(args.NewState()));
-            }
-        );
+        return TO_MILLISECONDS(medias[id].Duration().Value());
     }
 
     /// Tags
@@ -248,7 +241,7 @@ namespace Internal {
         }
         wcscpy_s(tags[4], TAG_SIZE, string.data());
         string.clear();
-        wcscpy_s(tags[5], TAG_SIZE, std::to_wstring(TO_SECONDS(music.Duration())).data());
+        wcscpy_s(tags[5], TAG_SIZE, std::to_wstring(TO_MILLISECONDS(music.Duration())).data());
         Collections::IVector<winrt::hstring> genre = music.Genre();
         for (int32_t index = 0; index < genre.Size(); index++) {
             string += genre.GetAt(index).data();
@@ -293,7 +286,7 @@ namespace Internal {
         }
         wcscpy_s(tags[1], TAG_SIZE, string.data());
         string.clear();
-        wcscpy_s(tags[2], TAG_SIZE, std::to_wstring(TO_SECONDS(video.Duration())).data());
+        wcscpy_s(tags[2], TAG_SIZE, std::to_wstring(TO_MILLISECONDS(video.Duration())).data());
         wcscpy_s(tags[3], TAG_SIZE, std::to_wstring(video.Height()).data());
         Collections::IVector<winrt::hstring> keywords = video.Keywords();
         for (int32_t index = 0; index < keywords.Size(); index++) {
@@ -342,7 +335,7 @@ namespace Internal {
         FileIO::WriteBufferAsync(saveFile, thumbnailBytes).get();
     }
 
-    /// NativeControls
+    /* NativeControls */
 
     EXPORT void NativeControls_create(void (*callback)(int32_t button)) {
         if (systemMediaTransportControlsExist) return;

@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 
-namespace WinMedia {
+namespace wm {
 
 
 class Tags;
