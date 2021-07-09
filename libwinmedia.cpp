@@ -75,15 +75,15 @@ namespace Internal {
     }
 
     EXPORT void Player_setVolume(int32_t id, float volume) {
-        players[id].Volume(volume);
+        players[id].Volume(volume / 100);
     }
     
     EXPORT void Player_setRate(int32_t id, float rate) {
-        players[id].PlaybackRate(rate);
+        players[id].PlaybackRate(rate / 100);
     }
 
     EXPORT void Player_setAudioBalance(int32_t id, float audioBalance) {
-        players[id].AudioBalance(audioBalance);
+        players[id].AudioBalance(audioBalance / 100);
     }
 
     EXPORT void Player_setAutoplay(int32_t id, bool autoplay) {
@@ -98,16 +98,16 @@ namespace Internal {
         return TO_MILLISECONDS(players[id].Position());
     }
 
-    EXPORT float Player_getVolume(int32_t id) {
-        return players[id].Volume();
+    EXPORT int32_t Player_getVolume(int32_t id) {
+        return players[id].Volume() * 100;
     }
 
-    EXPORT float Player_getRate(int32_t id) {
-        return players[id].PlaybackRate();
+    EXPORT int32_t Player_getRate(int32_t id) {
+        return players[id].PlaybackRate() * 100;
     }
 
-    EXPORT float Player_getAudioBalance(int32_t id) {
-        return players[id].AudioBalance();
+    EXPORT int32_t Player_getAudioBalance(int32_t id) {
+        return players[id].AudioBalance() * 100;
     }
 
     EXPORT bool Player_isAutoplay(int32_t id) {
