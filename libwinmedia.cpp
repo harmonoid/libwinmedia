@@ -26,8 +26,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifndef WIN_MEDIA_LIB_DLL
-#define WIN_MEDIA_LIB_DLL
+#ifndef WINMEDIALIB
+#define WINMEDIALIB
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage;
@@ -134,6 +134,24 @@ namespace Internal {
         );
     }
 
+    EXPORT void Player_setPositionEventHandler(int32_t id, void (*callback)(int32_t position)) {
+        players[id].PlaybackSession().PositionChanged(
+            [=](auto, const auto& args) -> void {
+                (*callback)(players[id].PlaybackSession().Position());
+            }
+        );
+    }
+
+    EXPORT void Player_setDurationEventHandler(int32_t id, void (*callback)(int32_t duration)) {
+        players[id].PlaybackSession().NaturalDurationChanged(
+            [=](auto, const auto& args) -> void {
+                (*callback)(players[id].PlaybackSession().NaturalDuration());
+            }
+        );
+    }
+
+    
+
     EXPORT void Player_NativeControls_create(int32_t id, void (*callback)(int32_t button)) {
         if (systemMediaTransportControlsExist) return;
         systemMediaTransportControlsExist = true;
@@ -216,7 +234,7 @@ namespace Internal {
         return TO_MILLISECONDS(medias[id].Duration().Value());
     }
 
-    /// Tags
+    /* Tags */
 
     EXPORT wchar_t** Tags_fromMusic(const wchar_t* uri) {
         FileProperties::StorageItemContentProperties properties = StorageFile::GetFileFromPathAsync(uri).get().Properties();
