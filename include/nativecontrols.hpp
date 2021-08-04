@@ -15,7 +15,7 @@ namespace wm {
 static bool nativeControlsExist;
 
 
-/// Defines event executed by user on the native media controls.
+/* Defines event executed by user on the native media controls. */
 enum NativeControlsButton {
     play,
     pause,
@@ -30,11 +30,11 @@ enum NativeControlsButton {
 };
 
 
-/// Used to create native media controls with manual event handling.
+/* Used to create native media controls with manual event handling. */
 class NativeControls {
 public:
 
-    /// Creates `NativeControls` instance & takes a function as argument for sending back event updates as a callback.
+    /* Creates `NativeControls` instance & takes a function as argument for sending back event updates as a callback. */
     NativeControls(std::function<void(NativeControlsButton)> handler) {
         if (!nativeControlsExist) {
             NativeControls::handler = handler;

@@ -13,9 +13,20 @@ extern "C" {
 namespace wm {
 
 
+/* Modes of extracting thumbnail. */
+enum ThumbnailMode {
+    picture,
+    video,
+    music,
+    document,
+    list,
+    single,
+};
+
+
 class Tags;
 
-/// Metadata tags of a music media.
+/* Metadata tags of a music media. */
 class MusicTags {
 public:
     std::wstring album;
@@ -61,7 +72,7 @@ private:
 };
 
 
-/// Metadata tags of a video media.
+/* Metadata tags of a video media. */
 class VideoTags {
 public:
     std::wstring bitrate;
@@ -109,32 +120,53 @@ private:
 };
 
 
-/// Retrieves metadata tags and thumbnail of a music or video media.
-///
-/// Use `Tags::fromMusic` to get `MusicTags*` of a music file by passing uri.
-/// Use `Tags::fromVideo` to get `VideoTags*` of a video file by passing uri.
-/// Use `Tags::extractThumbnail` to extract thumbnail of a media file to a particular folder with a particular name.
+/* Retrieves metadata tags and thumbnail of a music or video media.
+ * Use `Tags::fromMusic` to get `MusicTags*` of a music file by passing uri.
+ * Use `Tags::fromVideo` to get `VideoTags*` of a video file by passing uri.
+ * Use `Tags::extractThumbnail` to extract thumbnail of a media file to a folder with particular name.
+ */
 class Tags {
 public:
-
+    /**
+     * Extracts music tags of a media.
+     *
+     * @param uri URI of the media.
+     * @return MusicTags*
+     */
     static MusicTags* fromMusic(std::wstring uri) {
         return MusicTags::get(
             Internal::Tags_fromMusic(uri.data())
         );
     }
 
+    /**
+     * Extracts video tags of a media.
+     *
+     * @param uri URI of the media.
+     * @return VideoTags*
+     */
     static VideoTags* fromVideo(std::wstring uri) {
         return VideoTags::get(
             Internal::Tags_fromVideo(uri.data())
         );
     }
 
-    static void extractThumbnail(std::wstring source, std::wstring save, std::wstring fileName, int32_t mode, int32_t size) {
+    /**
+     * Extracts thumbnail of a media.
+     *
+     * @param uri URI of the media.
+     * @param save URI of the folder where thumbnail needs to be saved.
+     * @param fileName Name of generating thumbnail file.
+     * @param mode mode of extracting thumbnail.
+     * @param size size of thumbnail.
+     * @return void
+     */
+    static void extractThumbnail(std::wstring uri, std::wstring save, std::wstring fileName, ThumbnailMode mode, int32_t size) {
         Internal::Tags_extractThumbnail(
-            source.data(),
+            uri.data(),
             save.data(),
             fileName.data(),
-            mode,
+            static_cast<int>(mode),
             size
         );
     }

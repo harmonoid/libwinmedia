@@ -15,7 +15,10 @@ namespace wm {
 class Player;
 
 
-/// Creates a new Media instance using URI as string.
+/* Creates a playable media by taking URI as parameter.
+ * Can be played inside a `Player` object using open method.
+ * Pass parse as true, to retrieve its duration inside `Media::duration`.
+ */
 class Media {
 public:
     int32_t duration;

@@ -19,7 +19,7 @@ extern "C" {
 
 namespace Internal {
 
-    EXPORT int32_t Player_create();
+    EXPORT int32_t Player_create(bool showVideo = false);
 
     EXPORT void Player_dispose(int32_t id);
 
@@ -29,15 +29,25 @@ namespace Internal {
 
     EXPORT void Player_pause(int32_t id);
 
+    EXPORT void Player_setPosition(int32_t id, int32_t position);
+
     EXPORT void Player_setVolume(int32_t id, float volume);
 
-    EXPORT void Player_setRate(int32_t id, float rate);
+    EXPORT void Player_setAudioBalance(int32_t id, float audioBalance);
 
-    EXPORT int32_t Player_getRate(int32_t id);
+    EXPORT void Player_setAutoplay(int32_t id, bool autoplay);
+
+    EXPORT void Player_setIsLooping(int32_t id, bool looping);
+
+    EXPORT void Player_setRate(int32_t id, float rate);
 
     EXPORT int32_t Player_getPosition(int32_t id);
 
     EXPORT float Player_getVolume(int32_t id);
+
+    EXPORT int32_t Player_getRate(int32_t id);
+
+    EXPORT float Player_getAudioBalance(int32_t id);
 
     EXPORT bool Player_isAutoplay(int32_t id);
 
@@ -47,6 +57,10 @@ namespace Internal {
 
     EXPORT void Player_setRateEventHandler(int32_t id, void (*callback)(float rate));
 
+    EXPORT void Player_setPositionEventHandler(int32_t id, void (*callback)(int32_t position));
+
+    EXPORT void Player_setDurationEventHandler(int32_t id, void (*callback)(int32_t duration));
+    
     EXPORT void Player_NativeControls_create(int32_t id, void (*callback)(int32_t button));
 
     EXPORT void Player_NativeControls_setStatus(int32_t id, int32_t status);

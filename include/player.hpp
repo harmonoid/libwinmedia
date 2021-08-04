@@ -1,3 +1,5 @@
+/* TODO: Update `Player` class with event handlers. */
+
 #include "Internal.hpp"
 #include "Media.hpp"
 
@@ -10,11 +12,11 @@ extern "C" {
 
 namespace wm {
 
-/// Creates a new `Player` instance for `Media` playback.
+/* Creates a new `Player` instance for media playback. */
 class Player {
 public:
-    Player() {
-        this->id = Internal::Player_create();
+    Player(bool showVideo = false) {
+        this->id = Internal::Player_create(showVideo);
     }
     
     void open(Media media) {
