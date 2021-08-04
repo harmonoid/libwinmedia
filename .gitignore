@@ -10,6 +10,8 @@ external
 *.vcxproj
 *.vcxproj.filters
 *.user
+Debug
+Release
 
 # Executables 
 
@@ -20,7 +22,6 @@ out
 
 *.dir
 CMakeFiles
-Debug
 x64
 CMakeCache.txt
 cmake_install.cmake

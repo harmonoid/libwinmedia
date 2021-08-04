@@ -1,26 +1,23 @@
-#include "../include/libwinmedia.hpp"
-
 #include <iostream>
 #include <string>
-
-
-using namespace wm;
+#include "include/libwinmedia.hpp"
 
 int32_t main(int argc, const char* argv[]) {
+    using namespace wm;
     if (argc < 2) {
-        std::wcout << L"No media provided.\n"
-        << L"Example Usage:\n"
-        << argv[0] << L" file://C:/Music/MySong.mp3\n"
-        << argv[0] << L" https://www.example.com/MyVideo.mp4\n";
+        std::wcout << L"No URI provided.\n";
+        std::wcout << L"Example Usage:\n";
+        std::wcout << argv[0] << L" file://C:/alexmercerind/music.mp3\n";
+        std::wcout << argv[0] << L" https://alexmercerind.github.io/video.mp4\n";
         return EXIT_FAILURE;
     }
     std::string uri(argv[1]);
-    Media media = Media(std::wstring(uri.begin(), uri.end()), true);
-    std::cout << "Media duration: " << media.duration << " milliseconds.\n";
-    Player player = Player();
+    Media media = Media(std::wstring(uri.begin(), uri.end()));
+    Player player = Player(true);
     player.open(media);
     player.play();
     std::wcout << L"Playing " << argv[1] << " ...\n";
+    /* Prevent console from closing. */
     std::cin.get();
     return EXIT_SUCCESS;
 }
