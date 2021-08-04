@@ -1,10 +1,38 @@
+/*
+ * MIT License
+ * 
+ * Copyright (c) 2021 Hitesh Kumar Saini <saini123hitesh@gmail.com>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#define UNICODE
+#define _UNICODE
+/* Standard headers. */
 #include <iostream>
 #include <thread>
 #include <string>
 #include <cwchar>
 #include <vector>
 #include <map>
-
+#include <thread>
+/* win32 headers. */
+#include <Windows.h>
+/* c++/winRT headers. */
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Storage.FileProperties.h>
@@ -14,7 +42,10 @@
 #include <winrt/Windows.Media.Playlists.h>
 #include <winrt/Windows.Media.Audio.h>
 #include <winrt/Windows.System.h>
-
+#include <winrt/Windows.UI.Xaml.Hosting.h>
+#include <winrt/Windows.UI.Xaml.Controls.h>
+#include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
+/* Project specific macros. */
 #define TAG_SIZE 200
 #define TO_MILLISECONDS(timespan) timespan.count() / 10000
 
@@ -26,27 +57,97 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifndef WINMEDIALIB
-#define WINMEDIALIB
+#ifndef LIBWINMEDIA
+#define LIBWINMEDIA
+/* TODO: Add ability to define lpClassName & lpWindowName. */
+#define VIDEO_WINDOW_TITLE L"libwinmedia"
+#define VIDEO_WINDOW_CLASS VIDEO_WINDOW_TITLE
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Media;
 using namespace winrt::Windows::System;
+using namespace winrt::Windows::UI::Xaml;
 
-static std::vector<Playback::MediaPlayer> players;
-static std::vector<Core::MediaSource> medias;
-static bool systemMediaTransportControlsExist;
+
+static std::vector<Playback::MediaPlayer> players = {};
+static std::vector<Core::MediaSource> medias = {};
+
+static bool systemMediaTransportControlsExist = false;
+/* host win32 video window handle. */
+static HWND window = nullptr;
+/* xaml content video window handle. */
+static HWND xaml = nullptr;
+
+/* video window procedure. */
+LRESULT CALLBACK videoWindowProc(HWND, UINT, WPARAM, LPARAM);
+
 
 namespace Internal {
     
     /* Player */
 
-    EXPORT int32_t Player_create() {
+    EXPORT int32_t Player_create(bool showVideo = false) {
         int32_t id = players.size();
         Playback::MediaPlayer player = Playback::MediaPlayer();
         players.emplace_back(player);
         players[id].SystemMediaTransportControls().IsEnabled(false);
+        if (showVideo) {
+            /* Thread creating HWND & XAML source for showing corresponding MediaPlayerElement. */
+            new std::thread(
+                [=]() -> void {
+                    STARTUPINFO startupInfo;
+                    GetStartupInfo(&startupInfo);
+                    WNDCLASSEXW windowClass;
+                    SecureZeroMemory(&windowClass, sizeof(windowClass));
+                    windowClass.cbSize = sizeof(windowClass);
+                    windowClass.style = CS_HREDRAW | CS_VREDRAW;
+                    windowClass.lpfnWndProc = videoWindowProc;
+                    windowClass.hInstance = 0;
+                    windowClass.lpszClassName = VIDEO_WINDOW_CLASS;
+                    windowClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+                    windowClass.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+                    RegisterClassExW(&windowClass);
+                    window = CreateWindowExW(
+                        0L,
+                        VIDEO_WINDOW_CLASS,
+                        VIDEO_WINDOW_TITLE,
+                        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                        nullptr,
+                        nullptr,
+                        0,
+                        nullptr
+                    );
+                    if (!window) {
+                        throw std::exception("COULD_NOT_CREATE_WIN32_WINDOW", -1);
+                    }
+                    winrt::init_apartment(winrt::apartment_type::multi_threaded);
+                    const auto windowsXamlManager = Hosting::WindowsXamlManager::InitializeForCurrentThread();
+                    Hosting::DesktopWindowXamlSource desktopWindowXamlSource = {};
+                    const auto interop = desktopWindowXamlSource.as<IDesktopWindowXamlSourceNative>();
+                    winrt::check_hresult(interop->AttachToWindow(window));
+                    interop->get_WindowHandle(&xaml);
+                    if (!xaml) {
+                        throw std::exception("COULD_NOT_CREATE_XAML_SOURCE", -2);
+                    }
+                    RECT rect = { 0, 0, 0, 0 };
+                    GetClientRect(window, &rect);
+                    SetWindowPos(xaml, nullptr, 0, 0, rect.right, rect.bottom, SWP_SHOWWINDOW);
+                    Controls::MediaPlayerElement playerElement = Controls::MediaPlayerElement();
+                    playerElement.SetMediaPlayer(players[id]);
+                    desktopWindowXamlSource.Content(playerElement);
+                    ShowWindow(xaml, startupInfo.wShowWindow);
+                    UpdateWindow(xaml);
+                    MSG msg = {};
+                    while (GetMessageW(&msg, nullptr, 0, 0)) {
+                        TranslateMessage(&msg);
+                        DispatchMessageW(&msg);
+                    }
+                    /* TODO: Add ability to close the window. */
+                }
+            );
+        }
         return id;
     }
 
@@ -137,7 +238,7 @@ namespace Internal {
     EXPORT void Player_setPositionEventHandler(int32_t id, void (*callback)(int32_t position)) {
         players[id].PlaybackSession().PositionChanged(
             [=](auto, const auto& args) -> void {
-                (*callback)(players[id].PlaybackSession().Position());
+                (*callback)(TO_MILLISECONDS(players[id].PlaybackSession().Position()));
             }
         );
     }
@@ -145,12 +246,10 @@ namespace Internal {
     EXPORT void Player_setDurationEventHandler(int32_t id, void (*callback)(int32_t duration)) {
         players[id].PlaybackSession().NaturalDurationChanged(
             [=](auto, const auto& args) -> void {
-                (*callback)(players[id].PlaybackSession().NaturalDuration());
+                (*callback)(TO_MILLISECONDS(players[id].PlaybackSession().NaturalDuration()));
             }
         );
     }
-
-    
 
     EXPORT void Player_NativeControls_create(int32_t id, void (*callback)(int32_t button)) {
         if (systemMediaTransportControlsExist) return;
@@ -313,6 +412,7 @@ namespace Internal {
         }
         wcscpy_s(tags[4], TAG_SIZE, string.data());
         string.clear();
+        /* TODO: Handle VideoProperties::Latitude & VideoProperties::Longitude. */
         wcscpy_s(tags[5], TAG_SIZE, L"-1");
         wcscpy_s(tags[6], TAG_SIZE, L"-1");
         wcscpy_s(tags[7], TAG_SIZE, std::to_wstring(static_cast<uint32_t>(video.Orientation())).data());
@@ -416,6 +516,26 @@ namespace Internal {
     EXPORT void NativeControls_dispose() {
         Playback::BackgroundMediaPlayer::Current().SystemMediaTransportControls().IsEnabled(false);
     }
+}
+
+
+LRESULT CALLBACK videoWindowProc(HWND hwnd, UINT code, WPARAM wparam, LPARAM lparam) {
+    switch (code) {
+        case WM_DESTROY: {
+            PostQuitMessage(0);
+            return 0;
+        }
+        case WM_SIZE: {
+            RECT rect = { 0, 0, 0, 0 };
+            GetClientRect(window, &rect);
+            MoveWindow(xaml, 0, 0, rect.right, rect.bottom, TRUE);
+            break;
+        }
+        default: {
+            break;
+        }
+    }
+    return DefWindowProcW(hwnd, code, wparam, lparam);
 }
 
 #endif
