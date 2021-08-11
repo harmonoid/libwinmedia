@@ -81,26 +81,84 @@ Listen to playback events.
 
 ```cpp
 player.events.position(
-  [=](int position) -> void {}
+    [=](int position) -> void {}
 );
 
 player.events.duration(
-  [=](int duration) -> void {}
+    [=](int duration) -> void {}
 );
 
 player.events.rate(
-  [=](float rate) -> void {}
+    [=](float rate) -> void {}
 );
 
 player.events.volume(
-  [=](float volume) -> void {}
+    [=](float volume) -> void {}
 );
 
 player.events.isPlaying(
-  [=](bool isPlaying) -> void {}
+    [=](bool isPlaying) -> void {}
 );
 
 // Other events.
+```
+
+Create native system media controls.
+
+![](https://github.com/libwinmedia/libwinmedia/blob/assets/native_controls.jpg)
+
+Pass function as argument to receive event callbacks. 
+
+```cpp
+NativeControls controls = NativeControls(
+    [=](NativeControlsButton button) -> void {
+        if (button == NativeControlsButton::play) std::cout << "Play clicked.\n";
+        if (button == NativeControlsButton::pause) std::cout << "Pause clicked.\n";
+    }
+);
+```
+
+Update the native system media controls.
+
+```cpp
+controls.update(
+    new MusicNativeControls(
+        L"alexmercerind",     // Album Artist
+        L"album",             // Album
+        L"10",                // Track Count
+        L"alexmercerind",     // Artist
+        L"libwinmedia",       // Title
+        L"1"                  // Track Number
+    ),
+    L"file://C:/Users/alexmercerind/Pictures/AlbumArt.PNG"
+);
+```
+
+Clear the native system media controls.
+
+```cpp
+controls.dispose();
+```
+
+Extract metadata tags.
+
+```cpp
+MusicTags* tags = Tags::fromMusic(L"file://C:/alexmercerind/music.mp3");
+std::wcout << L"Title is " << tags->title << L"\n";
+std::wcout << L"Album is " << tags->album << L"\n";
+// Other metadata tags.
+```
+
+Extract album art.
+
+```cpp
+Tags::extractThumbnail(
+    L"file://C:/alexmercerind/music.mp3",
+    L"file://C:/path/to/output/folder",
+    L"AlbumArt.PNG",
+    ThumbnailMode::music,
+    400
+);
 ```
 
 ## Aim
@@ -116,3 +174,7 @@ The main goals of creating [libwinmedia](https://github.com/libwinmedia/libwinme
 - Being cross-platform. **
 
 ** Currently only working on Windows.
+
+## License 
+
+MIT. Contributions welcomed.
