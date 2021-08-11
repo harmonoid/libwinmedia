@@ -19,7 +19,7 @@ extern "C" {
 
 namespace Internal {
 
-    EXPORT int32_t Player_create(bool showVideo = false);
+    EXPORT void Player_create(int32_t id, bool showVideo = false);
 
     EXPORT void Player_dispose(int32_t id);
 
@@ -53,6 +53,12 @@ namespace Internal {
 
     EXPORT bool Player_isLooping(int32_t id);
 
+    EXPORT void Player_setIsPlayingEventHandler(int32_t id, void (*callback)(bool isPlaying));
+
+    EXPORT void Player_setIsCompletedEventHandler(int32_t id, void (*callback)(bool isCompleted));
+
+    EXPORT void Player_setIsBufferingEventHandler(int32_t id, void (*callback)(bool isBuffering));
+
     EXPORT void Player_setVolumeEventHandler(int32_t id, void (*callback)(float volume));
 
     EXPORT void Player_setRateEventHandler(int32_t id, void (*callback)(float rate));
@@ -71,7 +77,7 @@ namespace Internal {
 
     EXPORT void Player_NativeControls_dispose(int32_t id);
 
-    EXPORT int32_t Media_create(const wchar_t* uri, bool parse = false);
+    EXPORT void Media_create(int32_t id, const wchar_t* uri, bool parse = false);
 
     EXPORT void Media_dispose(int32_t id);
 
@@ -82,8 +88,6 @@ namespace Internal {
     EXPORT wchar_t** Tags_fromVideo(const wchar_t* uri);
 
     EXPORT void Tags_extractThumbnail(const wchar_t* source, const wchar_t* save, const wchar_t* fileName, int32_t mode, int32_t size);
-
-    EXPORT void Media_setParseEventHandler(int32_t id, void (*callback)(int32_t parse));
 
     EXPORT void NativeControls_create(void (*callback)(int32_t button));
 

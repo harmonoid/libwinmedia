@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-namespace wm {
+namespace lwm {
 
 
 class Player;
@@ -21,10 +21,10 @@ class Player;
  */
 class Media {
 public:
-    int32_t duration;
+    int32_t duration = 0;
 
-    Media(std::wstring uri, bool parse = false) {
-        this->id = Internal::Media_create(uri.c_str(), parse);
+    Media(int32_t id, std::wstring uri, bool parse = false): id(id) {
+        Internal::Media_create(id, uri.c_str(), parse);
         if (parse) this->duration = Internal::Media_getDuration(this->id);
     }
 

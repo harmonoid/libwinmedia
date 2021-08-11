@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 
-namespace wm {
+namespace lwm {
 
 
 /* Modes of extracting thumbnail. */

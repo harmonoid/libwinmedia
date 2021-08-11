@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-namespace wm {
+namespace lwm {
 
 
 static bool nativeControlsExist;
