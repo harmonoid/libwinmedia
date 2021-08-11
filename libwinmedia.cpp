@@ -329,7 +329,7 @@ namespace Internal {
         );
     }
 
-    EXPORT void Player_NativeControls_update(int32_t id, int32_t type, const wchar_t** data, const wchar_t* thumbnail) {
+    EXPORT void Player_NativeControls_update(int32_t id, int32_t type, wchar_t** data, const wchar_t* thumbnail) {
         SystemMediaTransportControls controls = players.at(id).SystemMediaTransportControls();
         SystemMediaTransportControlsDisplayUpdater updater = controls.DisplayUpdater();
         updater.Type(static_cast<MediaPlaybackType>(type));
@@ -533,7 +533,7 @@ namespace Internal {
         );
     }
 
-    EXPORT void NativeControls_update(int32_t type, const wchar_t** data, const wchar_t* thumbnail) {
+    EXPORT void NativeControls_update(int32_t type, wchar_t** data, const wchar_t* thumbnail) {
         SystemMediaTransportControls controls = Playback::BackgroundMediaPlayer::Current().SystemMediaTransportControls();
         SystemMediaTransportControlsDisplayUpdater updater = controls.DisplayUpdater();
         updater.Type(static_cast<MediaPlaybackType>(type));
