@@ -13,7 +13,6 @@ extern "C" {
 namespace lwm {
 
 
-/* Modes of extracting thumbnail. */
 enum ThumbnailMode {
     picture,
     video,
@@ -26,7 +25,7 @@ enum ThumbnailMode {
 
 class Tags;
 
-/* Metadata tags of a music media. */
+
 class MusicTags {
 public:
     std::wstring album;
@@ -72,7 +71,6 @@ private:
 };
 
 
-/* Metadata tags of a video media. */
 class VideoTags {
 public:
     std::wstring bitrate;
@@ -120,47 +118,20 @@ private:
 };
 
 
-/* Retrieves metadata tags and thumbnail of a music or video media.
- * Use `Tags::fromMusic` to get `MusicTags*` of a music file by passing uri.
- * Use `Tags::fromVideo` to get `VideoTags*` of a video file by passing uri.
- * Use `Tags::extractThumbnail` to extract thumbnail of a media file to a folder with particular name.
- */
 class Tags {
 public:
-    /**
-     * Extracts music tags of a media.
-     *
-     * @param uri URI of the media.
-     * @return MusicTags*
-     */
     static MusicTags* fromMusic(std::wstring uri) {
         return MusicTags::get(
             Internal::Tags_fromMusic(uri.data())
         );
     }
 
-    /**
-     * Extracts video tags of a media.
-     *
-     * @param uri URI of the media.
-     * @return VideoTags*
-     */
     static VideoTags* fromVideo(std::wstring uri) {
         return VideoTags::get(
             Internal::Tags_fromVideo(uri.data())
         );
     }
 
-    /**
-     * Extracts thumbnail of a media.
-     *
-     * @param uri URI of the media.
-     * @param save URI of the folder where thumbnail needs to be saved.
-     * @param fileName Name of generating thumbnail file.
-     * @param mode mode of extracting thumbnail.
-     * @param size size of thumbnail.
-     * @return void
-     */
     static void extractThumbnail(std::wstring uri, std::wstring save, std::wstring fileName, ThumbnailMode mode, int32_t size) {
         Internal::Tags_extractThumbnail(
             uri.data(),

@@ -18,19 +18,6 @@ namespace lwm {
 class Player;
 
 
-/* Sets event listeners for various events in `Player`.
- * Takes a function or lambda as an argument.
- * Following are the currently available listeners.
- * Player::events::isPlaying
- * Player::events::isCompleted
- * Player::events::isBuffering
- * Player::events::volume
- * Player::events::rate
- * Player::events::position
- * Player::events::duration
- * 
- * TODO: Make this class friendly for multiple instances.
- */
 class PlayerEvents {
 public:
     PlayerEvents() {};
@@ -121,7 +108,6 @@ private:
 };
 
 
-/* Creates a new `Player` instance for media playback. */
 class Player {
 public:
     Player(int32_t id, bool showVideo = false): id(id) {
