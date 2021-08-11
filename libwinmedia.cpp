@@ -25,14 +25,11 @@
 /* Standard headers. */
 #include <iostream>
 #include <thread>
-#include <string>
 #include <cwchar>
-#include <vector>
-#include <map>
-#include <thread>
+#include <unordered_map>
 /* win32 headers. */
 #include <Windows.h>
-/* c++/winRT headers. */
+/* C++/WinRT headers. */
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Storage.FileProperties.h>
@@ -44,10 +41,10 @@
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
+#include <winrt/Windows.Graphics.DirectX.h>
+#include <winrt/Windows.Graphics.Imaging.h>
+#include <winrt/Windows.Graphics.DirectX.Direct3D11.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
-/* Project specific macros. */
-#define TAG_SIZE 200
-#define TO_MILLISECONDS(timespan) timespan.count() / 10000
 
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
@@ -62,38 +59,42 @@ extern "C" {
 /* TODO: Add ability to define lpClassName & lpWindowName. */
 #define VIDEO_WINDOW_TITLE L"libwinmedia"
 #define VIDEO_WINDOW_CLASS VIDEO_WINDOW_TITLE
+/* Project specific macros. */
+#define TAG_SIZE 200
+#define TO_MILLISECONDS(timespan) timespan.count() / 10000
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Media;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::Graphics::Imaging;
+using namespace winrt::Windows::Graphics::DirectX::Direct3D11;
 
+std::unordered_map<int32_t, Core::MediaSource> medias = {};
+std::unordered_map<int32_t, Playback::MediaPlayer> players = {};
 
-static std::vector<Playback::MediaPlayer> players = {};
-static std::vector<Core::MediaSource> medias = {};
-
-static bool systemMediaTransportControlsExist = false;
-/* host win32 video window handle. */
+static bool SMTCExist = false;
+/* Host win32 video window handle. */
 static HWND window = nullptr;
-/* xaml content video window handle. */
+/* XAML content video window handle. */
 static HWND xaml = nullptr;
 
-/* video window procedure. */
+/* Video window procedure. */
 LRESULT CALLBACK videoWindowProc(HWND, UINT, WPARAM, LPARAM);
 
 
 namespace Internal {
-    
+
     /* Player */
 
-    EXPORT int32_t Player_create(bool showVideo = false) {
-        int32_t id = players.size();
+    EXPORT void Player_create(int32_t id, bool showVideo = false) {
         Playback::MediaPlayer player = Playback::MediaPlayer();
-        players.emplace_back(player);
-        players[id].SystemMediaTransportControls().IsEnabled(false);
+        players.insert(std::make_pair(id, player));
+        players.at(id).SystemMediaTransportControls().IsEnabled(false);
         if (showVideo) {
             /* Thread creating HWND & XAML source for showing corresponding MediaPlayerElement. */
+            /* TODO: Delete thread object if window is closed. */
             new std::thread(
                 [=]() -> void {
                     STARTUPINFO startupInfo;
@@ -135,7 +136,7 @@ namespace Internal {
                     GetClientRect(window, &rect);
                     SetWindowPos(xaml, nullptr, 0, 0, rect.right, rect.bottom, SWP_SHOWWINDOW);
                     Controls::MediaPlayerElement playerElement = Controls::MediaPlayerElement();
-                    playerElement.SetMediaPlayer(players[id]);
+                    playerElement.SetMediaPlayer(players.at(id));
                     desktopWindowXamlSource.Content(playerElement);
                     ShowWindow(xaml, startupInfo.wShowWindow);
                     UpdateWindow(xaml);
@@ -148,113 +149,165 @@ namespace Internal {
                 }
             );
         }
-        return id;
     }
 
     EXPORT void Player_dispose(int32_t id) {
-        players[id].Close();
+        players.at(id).Close();
     }
 
     EXPORT void Player_open(int32_t id, int32_t mediaId) {
-        players[id].Source(
-            Playback::MediaPlaybackItem(medias[mediaId])
+        players.at(id).Source(
+            Playback::MediaPlaybackItem(medias.at(mediaId))
         );
     }
 
     EXPORT void Player_play(int32_t id) {
-        players[id].Play();
+        players.at(id).Play();
     }
 
     EXPORT void Player_pause(int32_t id) {
-        players[id].Pause();
+        players.at(id).Pause();
     }
 
     EXPORT void Player_setPosition(int32_t id, int32_t position) {
-        players[id].Position(
+        players.at(id).Position(
             TimeSpan(std::chrono::seconds(position))
         );
     }
 
     EXPORT void Player_setVolume(int32_t id, float volume) {
-        players[id].Volume(volume);
+        players.at(id).Volume(volume);
     }
     
     EXPORT void Player_setRate(int32_t id, float rate) {
-        players[id].PlaybackRate(rate);
+        players.at(id).PlaybackRate(rate);
     }
 
     EXPORT void Player_setAudioBalance(int32_t id, float audioBalance) {
-        players[id].AudioBalance(audioBalance);
+        players.at(id).AudioBalance(audioBalance);
     }
 
     EXPORT void Player_setAutoplay(int32_t id, bool autoplay) {
-        players[id].AutoPlay(autoplay);
+        players.at(id).AutoPlay(autoplay);
     }
 
     EXPORT void Player_setIsLooping(int32_t id, bool looping) {
-        players[id].IsLoopingEnabled(looping);
+        players.at(id).IsLoopingEnabled(looping);
     }
 
     EXPORT int32_t Player_getPosition(int32_t id) {
-        return TO_MILLISECONDS(players[id].Position());
+        return TO_MILLISECONDS(players.at(id).Position());
     }
 
     EXPORT float Player_getVolume(int32_t id) {
-        return players[id].Volume();
+        return players.at(id).Volume();
     }
 
     EXPORT float Player_getRate(int32_t id) {
-        return players[id].PlaybackRate();
+        return players.at(id).PlaybackRate();
     }
 
     EXPORT float Player_getAudioBalance(int32_t id) {
-        return players[id].AudioBalance();
+        return players.at(id).AudioBalance();
     }
 
     EXPORT bool Player_isAutoplay(int32_t id) {
-        return players[id].AutoPlay();
+        return players.at(id).AutoPlay();
     }
 
     EXPORT bool Player_isLooping(int32_t id) {
-        return players[id].IsLoopingEnabled();
+        return players.at(id).IsLoopingEnabled();
+    }
+
+    EXPORT void Player_setFrameEventHandler(int32_t id, int32_t width, int32_t height, void (*callback)(uint8_t* frame)) {
+        IDirect3DSurface surface = IDirect3DSurface();
+        Streams::IBuffer buffer = Streams::IBuffer();
+        players.at(id).IsVideoFrameServerEnabled(true);
+        players.at(id).VideoFrameAvailable(
+            [=](auto, const auto& args) -> void {
+                players.at(id).CopyFrameToVideoSurface(surface);
+                SoftwareBitmap bitmap = SoftwareBitmap::CreateCopyFromSurfaceAsync(surface).get();
+                bitmap.CopyToBuffer(buffer);
+                (*callback)(buffer.data());
+            }
+        );
+    }
+
+    EXPORT void Player_setIsPlayingEventHandler(int32_t id, void (*callback)(bool isPlaying)) {
+        players.at(id).PlaybackSession().PlaybackStateChanged(
+            [=](auto, const auto& args) -> void {
+                if (players.at(id).PlaybackSession().PlaybackState() == Playback::MediaPlaybackState::Playing) {
+                    (*callback)(true);
+                }
+                if (players.at(id).PlaybackSession().PlaybackState() == Playback::MediaPlaybackState::Paused) {
+                    (*callback)(false);
+                }
+            }
+        );
+    }
+
+    EXPORT void Player_setIsCompletedEventHandler(int32_t id, void (*callback)(bool isCompleted)) {
+        players.at(id).MediaEnded(
+            [=](auto, const auto& args) -> void {
+                (*callback)(true);
+            }
+        );
+        players.at(id).PlaybackSession().PlaybackStateChanged(
+            [=](auto, const auto& args) -> void {
+                (*callback)(false);
+            }
+        );
+    }
+
+    EXPORT void Player_setIsBufferingEventHandler(int32_t id, void (*callback)(bool isBuffering)) {
+        players.at(id).BufferingStarted(
+            [=](auto, const auto& args) -> void {
+                (*callback)(true);
+            }
+        );
+        players.at(id).BufferingEnded(
+            [=](auto, const auto& args) -> void {
+                (*callback)(false);
+            }
+        );
     }
 
     EXPORT void Player_setVolumeEventHandler(int32_t id, void (*callback)(float volume)) {
-        players[id].VolumeChanged(
+        players.at(id).VolumeChanged(
             [=](auto, const auto& args) -> void {
-                (*callback)(players[id].Volume());
+                (*callback)(players.at(id).Volume());
             }
         );
     }
 
     EXPORT void Player_setRateEventHandler(int32_t id, void (*callback)(float rate)) {
-        players[id].MediaPlayerRateChanged(
+        players.at(id).MediaPlayerRateChanged(
             [=](auto, const auto& args) -> void {
-                (*callback)(players[id].PlaybackRate());
+                (*callback)(players.at(id).PlaybackRate());
             }
         );
     }
 
     EXPORT void Player_setPositionEventHandler(int32_t id, void (*callback)(int32_t position)) {
-        players[id].PlaybackSession().PositionChanged(
+        players.at(id).PlaybackSession().PositionChanged(
             [=](auto, const auto& args) -> void {
-                (*callback)(TO_MILLISECONDS(players[id].PlaybackSession().Position()));
+                (*callback)(TO_MILLISECONDS(players.at(id).PlaybackSession().Position()));
             }
         );
     }
 
     EXPORT void Player_setDurationEventHandler(int32_t id, void (*callback)(int32_t duration)) {
-        players[id].PlaybackSession().NaturalDurationChanged(
+        players.at(id).PlaybackSession().NaturalDurationChanged(
             [=](auto, const auto& args) -> void {
-                (*callback)(TO_MILLISECONDS(players[id].PlaybackSession().NaturalDuration()));
+                (*callback)(TO_MILLISECONDS(players.at(id).PlaybackSession().NaturalDuration()));
             }
         );
     }
 
     EXPORT void Player_NativeControls_create(int32_t id, void (*callback)(int32_t button)) {
-        if (systemMediaTransportControlsExist) return;
-        systemMediaTransportControlsExist = true;
-        SystemMediaTransportControls controls = players[id].SystemMediaTransportControls();
+        if (SMTCExist) return;
+        SMTCExist = true;
+        SystemMediaTransportControls controls = players.at(id).SystemMediaTransportControls();
         controls.IsEnabled(true);
         controls.IsPlayEnabled(true);
         controls.IsPauseEnabled(true);
@@ -277,7 +330,7 @@ namespace Internal {
     }
 
     EXPORT void Player_NativeControls_update(int32_t id, int32_t type, const wchar_t** data, const wchar_t* thumbnail) {
-        SystemMediaTransportControls controls = players[id].SystemMediaTransportControls();
+        SystemMediaTransportControls controls = players.at(id).SystemMediaTransportControls();
         SystemMediaTransportControlsDisplayUpdater updater = controls.DisplayUpdater();
         updater.Type(static_cast<MediaPlaybackType>(type));
         if (type == 0) {
@@ -305,32 +358,32 @@ namespace Internal {
     }
 
     EXPORT void Player_NativeControls_clear(int32_t id) {
-        SystemMediaTransportControls controls = players[id].SystemMediaTransportControls();
+        SystemMediaTransportControls controls = players.at(id).SystemMediaTransportControls();
         controls.DisplayUpdater().ClearAll();
     }
 
     EXPORT void Player_NativeControls_dispose(int32_t id) {
-        players[id].SystemMediaTransportControls().IsEnabled(false);
+        players.at(id).SystemMediaTransportControls().IsEnabled(false);
     }
 
     /* Media */
 
-    EXPORT int32_t Media_create(const wchar_t* uri, bool parse = false) {
-        int32_t id = medias.size();
+    EXPORT void Media_create(int32_t id, const wchar_t* uri, bool parse = false) {
         Core::MediaSource media = Core::MediaSource::CreateFromUri(
             Uri(uri)
         );
-        if (parse) media.OpenAsync().get();
-        medias.emplace_back(media);
-        return id;
+        medias.insert(
+            std::make_pair(id, media)
+        );
+        if (parse) medias.at(id).OpenAsync().get();
     }
 
     EXPORT void Media_dispose(int32_t id) {
-        return medias[id].Close();
+        return medias.at(id).Close();
     }
 
     EXPORT int32_t Media_getDuration(int32_t id) {
-        return TO_MILLISECONDS(medias[id].Duration().Value());
+        return TO_MILLISECONDS(medias.at(id).Duration().Value());
     }
 
     /* Tags */
@@ -456,8 +509,8 @@ namespace Internal {
     /* NativeControls */
 
     EXPORT void NativeControls_create(void (*callback)(int32_t button)) {
-        if (systemMediaTransportControlsExist) return;
-        systemMediaTransportControlsExist = true;
+        if (SMTCExist) return;
+        SMTCExist = true;
         SystemMediaTransportControls controls = Playback::BackgroundMediaPlayer::Current().SystemMediaTransportControls();
         controls.IsEnabled(true);
         controls.IsPlayEnabled(true);
