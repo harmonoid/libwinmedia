@@ -6,7 +6,7 @@
 
 ## Example
 
-A very simple example can be as follows:
+A very simple example can be as follows.
 
 ```cpp
 #include "libwinmedia/libwinmedia.hpp"
@@ -40,26 +40,26 @@ int main(int ac, const char** av) {
 
 ## Documentation
 
-Create a new player.
+**Create a new player.**
 
 ```cpp
 Player player = Player(0);
 ```
 
-Create a media to open inside player.
+**Create a media to open inside player.**
 
 ```cpp
 Media media = Media(0, true);
 int duration = media.duration;
 ```
 
-Play the media.
+**Play the media.**
 
 ```cpp
 player.open(media);
 ```
 
-Control playback.
+**Control playback.**
 
 ```cpp
 player.play();
@@ -77,7 +77,7 @@ player.setIsLooping(false);
 player.setAudioBalance(1.0);
 ```
 
-Listen to playback events.
+**Listen to playback events.**
 
 ```cpp
 player.events.position(
@@ -103,11 +103,11 @@ player.events.isPlaying(
 // Other events.
 ```
 
-Create native system media controls.
+**Create native system media controls.**
 
 ![](https://github.com/libwinmedia/libwinmedia/blob/assets/native_controls.jpg)
 
-Pass function as argument to receive event callbacks. 
+Pass function as argument to receive event callbacks.
 
 ```cpp
 NativeControls controls = NativeControls(
@@ -140,7 +140,7 @@ Clear the native system media controls.
 controls.dispose();
 ```
 
-Extract metadata tags.
+**Extract metadata tags.**
 
 ```cpp
 MusicTags* tags = Tags::fromMusic(L"file://C:/alexmercerind/music.mp3");
@@ -149,7 +149,7 @@ std::wcout << L"Album is " << tags->album << L"\n";
 // Other metadata tags.
 ```
 
-Extract album art.
+**Extract album art.**
 
 ```cpp
 Tags::extractThumbnail(
@@ -160,6 +160,34 @@ Tags::extractThumbnail(
     400
 );
 ```
+
+**Show video in a window.**
+
+For showing video, you must instantiate player as follows.
+
+```cpp
+Player player = Player(0, true);
+```
+
+You need to embed a manifest with `maxversiontested` property to the generated executable. The library creates a separate win32 window on another thread & uses XAML islands to render the `MediaPlayerElement` in it (for showing video). Learn more [here](https://docs.microsoft.com/en-us/windows/apps/desktop/modernize/host-standard-control-with-xaml-islands-cpp) & [here](https://docs.microsoft.com/en-us/cpp/build/how-to-embed-a-manifest-inside-a-c-cpp-application?view=msvc-160).
+
+```manifest
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+    <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+        <application>
+            <maxversiontested Id="10.0.18362.0"/>
+            <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+        </application>
+    </compatibility>
+</assembly>
+```
+
+## Upcoming Features
+
+- Fixes to multiple video windows.
+- Improving memory usage.
+- Adding video frame callbacks.
 
 ## Aim
 
