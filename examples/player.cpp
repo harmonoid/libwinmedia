@@ -1,23 +1,26 @@
 #include <iostream>
 #include <string>
-#include "include/libwinmedia.hpp"
+#include "../include/libwinmedia.hpp"
 
-int32_t main(int argc, const char* argv[]) {
-    using namespace wm;
-    if (argc < 2) {
-        std::wcout << L"No URI provided.\n";
-        std::wcout << L"Example Usage:\n";
-        std::wcout << argv[0] << L" file://C:/alexmercerind/music.mp3\n";
-        std::wcout << argv[0] << L" https://alexmercerind.github.io/video.mp4\n";
-        return EXIT_FAILURE;
-    }
-    std::string uri(argv[1]);
-    Media media = Media(std::wstring(uri.begin(), uri.end()));
-    Player player = Player(true);
-    player.open(media);
-    player.play();
-    std::wcout << L"Playing " << argv[1] << " ...\n";
-    /* Prevent console from closing. */
-    std::cin.get();
-    return EXIT_SUCCESS;
+auto TO_WIDESTRING = [](const char* array) -> std::wstring {
+  std::string string = std::string(array);
+  return std::wstring(string.begin(), string.end());
+};
+
+int main(int ac, const char** av) {
+  if (ac < 2) {
+    std::wcout << L"No URI provided.\n" << L"Example Usage:\n" << av[0]
+               << L" file://C:/alexmercerind/music.mp3\n" << av[0]
+               << L" https://alexmercerind.github.io/video.mp4\n";
+    return EXIT_FAILURE;
+  }
+  auto player = lwm::Player(0);
+  auto media = std::make_shared<lwm::Media>(0, TO_WIDESTRING(av[1]));
+  player.Open(media);
+  player.Play();
+  player.events()->Position([](int position) -> void {
+    std::wcout << L"Position : " << position << L".\n";
+  });
+  std::cin.get();
+  return EXIT_SUCCESS;
 }
