@@ -9,151 +9,115 @@
 extern "C" {
 #endif
 
-
 namespace lwm {
-
 
 class NativeControls;
 
-
-static bool nativeControlsExist;
-
+static bool g_native_controls_exist;
 
 enum NativeControlsButton {
-    play,
-    pause,
-    stop,
-    record,
-    fastForward,
-    rewind,
-    next,
-    previous,
-    channelUp,
-    channelDown
+  Play,
+  Pause,
+  Stop,
+  Record,
+  FastForward,
+  Rewind,
+  Next,
+  Previous,
+  ChannelUp,
+  ChannelDown
 };
-
 
 enum NativeControlsStatus {
-    closed,
-    changing,
-    stopped,
-    playing,
-    paused,
+  Closed,
+  Changing,
+  Stopped,
+  Playing,
+  Paused,
 };
-
 
 class NativeControlsState {
-public:
-    NativeControlsState() {}
+ public:
+  NativeControlsState() {}
 
-    wchar_t** data = nullptr;
-    virtual int32_t type() = 0;
+  wchar_t** data() const { return data_.get(); }
+
+  virtual int32_t Type() const = 0;
+
+ protected:
+  std::unique_ptr<wchar_t* []> data_;
 };
 
+class MusicNativeControlState : public NativeControlsState {
+ public:
+  MusicNativeControlState(std::wstring album_artist, std::wstring album,
+                          std::wstring track_count, std::wstring artist,
+                          std::wstring title, std::wstring track_number) {
+    data_ = std::unique_ptr<wchar_t* []>(new wchar_t*[6]);
+    for (int32_t i = 0; i < 6; i++) data_[i] = new wchar_t[200];
+    wcscpy_s(data_[0], 200, album_artist.c_str());
+    wcscpy_s(data_[1], 200, album.c_str());
+    wcscpy_s(data_[2], 200, track_count.c_str());
+    wcscpy_s(data_[3], 200, artist.c_str());
+    wcscpy_s(data_[4], 200, title.c_str());
+    wcscpy_s(data_[5], 200, track_number.c_str());
+  }
 
-class MusicNativeControls: public NativeControlsState {
-public:
-    MusicNativeControls(
-        std::wstring albumArtist,
-        std::wstring album,
-        std::wstring trackCount,
-        std::wstring artist,
-        std::wstring title,
-        std::wstring trackNumber
-    ) {
-        this->data = new wchar_t*[6];
-        for (int32_t i = 0; i < 6; i++) this->data[i] = new wchar_t[200];
-        wcscpy_s(this->data[0], 200, albumArtist.data());
-        wcscpy_s(this->data[1], 200, album.data());
-        wcscpy_s(this->data[2], 200, trackCount.data());
-        wcscpy_s(this->data[3], 200, artist.data());
-        wcscpy_s(this->data[4], 200, title.data());
-        wcscpy_s(this->data[5], 200, trackNumber.data());
-    }
+  int32_t Type() const override { return 1; }
 
-    ~MusicNativeControls() {
-        for (int32_t i = 0; i < 6; i++) delete this->data[i];
-        delete this->data;
-    }
-
-    int32_t type() override {
-        return 1;
-    }
+  MusicNativeControlState() {
+    for (int32_t i = 0; i < 6; i++) delete data_[i];
+  }
 };
 
+class VideoNativeControlState : public NativeControlsState {
+ public:
+  VideoNativeControlState(std::wstring title, std::wstring subtitle) {
+    data_ = std::unique_ptr<wchar_t* []>(new wchar_t*[2]);
+    for (int32_t i = 0; i < 2; i++) data_[i] = new wchar_t[200];
+    wcscpy_s(data_[0], 200, title.c_str());
+    wcscpy_s(data_[1], 200, subtitle.c_str());
+  }
 
-class VideoNativeControls: public NativeControlsState {
-public:
-    VideoNativeControls(
-        std::wstring title,
-        std::wstring subtitle
-    ) {
-        this->data = new wchar_t*[2];
-        for (int32_t i = 0; i < 2; i++) this->data[i] = new wchar_t[200];
-        wcscpy_s(this->data[0], 200, title.data());
-        wcscpy_s(this->data[1], 200, subtitle.data());
-    }
+  int32_t Type() const override { return 2; }
 
-    ~VideoNativeControls() {
-        for (int32_t i = 0; i < 2; i++) delete this->data[i];
-        delete this->data;
-    }
-
-    int32_t type() override {
-        return 2;
-    }
+  VideoNativeControlState() {
+    for (int32_t i = 0; i < 2; i++) delete data_[i];
+  }
 };
-
 
 class NativeControls {
-public:
-
-    NativeControls(std::function<void(NativeControlsButton)> handler) {
-        if (!nativeControlsExist) {
-            NativeControls::handler = handler;
-            Internal::NativeControls_create(
-                &NativeControls::_handler
-            );
-            nativeControlsExist = true;
-        }
+ public:
+  NativeControls(std::function<void(NativeControlsButton)> handler) {
+    if (!g_native_controls_exist) {
+      NativeControls::handler = handler;
+      Internal::NativeControlsCreate(&NativeControls::_handler);
+      g_native_controls_exist = true;
     }
+  }
 
-    void update(NativeControlsState* state, std::wstring thumbnail = L"") {
-        Internal::NativeControls_update(
-            state->type(),
-            state->data,
-            thumbnail.data()
-        );
-        delete state;
-    }
+  void Update(std::shared_ptr<NativeControlsState> state,
+              std::wstring thumbnail = L"") {
+    Internal::NativeControlsUpdate(state->Type(), state->data(),
+                                   thumbnail.c_str());
+  }
 
-    void setStatus(NativeControlsStatus status) {
-        Internal::NativeControls_setStatus(
-            static_cast<int>(status)
-        );
-    }
+  void SetStatus(NativeControlsStatus status) {
+    Internal::NativeControlsSetStatus(static_cast<int>(status));
+  }
 
-    void clear() {
-        Internal::NativeControls_clear();
-    }
+  void Clear() { Internal::NativeControlsClear(); }
 
-    void dispose() {
-        Internal::NativeControls_dispose();
-    }
+  void Dispose() { Internal::NativeControlsDispose(); }
 
-private:
-    static inline std::function<void(NativeControlsButton)> handler;
+ private:
+  static inline std::function<void(NativeControlsButton)> handler;
 
-    static inline void _handler(int32_t button) {
-        NativeControls::handler(
-            static_cast<NativeControlsButton>(button)
-        );
-    }
+  static inline void _handler(int32_t button) {
+    NativeControls::handler(static_cast<NativeControlsButton>(button));
+  }
 };
-
-
 }
-
 
 #ifdef __cplusplus
 }

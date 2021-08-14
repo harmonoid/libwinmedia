@@ -11,183 +11,153 @@
 extern "C" {
 #endif
 
-
 namespace lwm {
-
 
 class Player;
 
-
 class PlayerEvents {
-public:
-    PlayerEvents() {};
+ public:
+  PlayerEvents(){};
 
-    PlayerEvents(int32_t id): id(id) {}
+  PlayerEvents(int32_t id) : id_(id) {}
 
-    void isPlaying(std::function<void(bool)> lambda) {
-        PlayerEvents::_isPlaying = lambda;
-        Internal::Player_setIsPlayingEventHandler(this->id, &PlayerEvents::__isPlaying);
-    }
+  void IsPlaying(std::function<void(bool)> listener) {
+    PlayerEvents::is_playing_ = listener;
+    Internal::PlayerSetIsPlayingEventHandler(id_, &PlayerEvents::OnIsPlaying);
+  }
 
-    void isCompleted(std::function<void(bool)> lambda) {
-        PlayerEvents::_isCompleted = lambda;
-        Internal::Player_setIsCompletedEventHandler(this->id, &PlayerEvents::__isCompleted);
-    }
+  void IsCompleted(std::function<void(bool)> listener) {
+    PlayerEvents::is_completed_ = listener;
+    Internal::PlayerSetIsCompletedEventHandler(id_,
+                                               &PlayerEvents::OnIsCompleted);
+  }
 
-    void isBuffering(std::function<void(bool)> lambda) {
-        PlayerEvents::_isBuffering = lambda;
-        Internal::Player_setIsBufferingEventHandler(this->id, &PlayerEvents::__isBuffering);
-    }
+  void IsBuffering(std::function<void(bool)> listener) {
+    PlayerEvents::is_buffering_ = listener;
+    Internal::PlayerSetIsBufferingEventHandler(id_,
+                                               &PlayerEvents::OnIsCompleted);
+  }
 
-    void volume(std::function<void(float)> lambda) {
-        PlayerEvents::_volume = lambda;
-        Internal::Player_setVolumeEventHandler(this->id, &PlayerEvents::__volume);
-    }
+  void Volume(std::function<void(float)> listener) {
+    PlayerEvents::volume_ = listener;
+    Internal::PlayerSetVolumeEventHandler(id_, &PlayerEvents::OnVolume);
+  }
 
-    void rate(std::function<void(float)> lambda) {
-        PlayerEvents::_rate = lambda;
-        Internal::Player_setRateEventHandler(this->id, &PlayerEvents::__rate);
-    }
+  void Rate(std::function<void(float)> listener) {
+    PlayerEvents::rate_ = listener;
+    Internal::PlayerSetRateEventHandler(id_, &PlayerEvents::OnRate);
+  }
 
-    void position(std::function<void(int32_t)> lambda) {
-        PlayerEvents::_position = lambda;
-        Internal::Player_setPositionEventHandler(this->id, &PlayerEvents::__position);
-    }
+  void Position(std::function<void(int32_t)> listener) {
+    PlayerEvents::position_ = listener;
+    Internal::PlayerSetPositionEventHandler(id_, &PlayerEvents::OnPosition);
+  }
 
-    void duration(std::function<void(int32_t)> lambda) {
-        PlayerEvents::_duration = lambda;
-        Internal::Player_setDurationEventHandler(this->id, &PlayerEvents::__duration);
-    }
+  void Duration(std::function<void(int32_t)> listener) {
+    PlayerEvents::duration_ = listener;
+    Internal::PlayerSetDurationEventHandler(id_, &PlayerEvents::OnDuration);
+  }
 
-private:
-    int32_t id = 0;
+ private:
+  int32_t id_;
 
-    static inline std::function<void(bool)> _isPlaying;
+  static inline std::function<void(bool)> is_playing_;
 
-    static inline void __isPlaying(bool value) {
-        PlayerEvents::_isPlaying(value);
-    }
+  static inline void OnIsPlaying(bool value) {
+    PlayerEvents::is_playing_(value);
+  }
 
-    static inline std::function<void(bool)> _isCompleted;
+  static inline std::function<void(bool)> is_completed_;
 
-    static inline void __isCompleted(bool value) {
-        PlayerEvents::_isCompleted(value);
-    }
+  static inline void OnIsCompleted(bool value) {
+    PlayerEvents::is_completed_(value);
+  }
 
-    static inline std::function<void(bool)> _isBuffering;
+  static inline std::function<void(bool)> is_buffering_;
 
-    static inline void __isBuffering(bool value) {
-        PlayerEvents::_isBuffering(value);
-    }
+  static inline void OnIsBuffering(bool value) {
+    PlayerEvents::is_buffering_(value);
+  }
 
-    static inline std::function<void(float)> _volume;
+  static inline std::function<void(float)> volume_;
 
-    static inline void __volume(float value) {
-        PlayerEvents::_volume(value);
-    }
+  static inline void OnVolume(float value) { PlayerEvents::volume_(value); }
 
-    static inline std::function<void(float)> _rate;
+  static inline std::function<void(float)> rate_;
 
-    static inline void __rate(float value) {
-        PlayerEvents::_rate(value);
-    }
+  static inline void OnRate(float value) { PlayerEvents::rate_(value); }
 
-    static inline std::function<void(int32_t)> _position;
+  static inline std::function<void(int32_t)> position_;
 
-    static inline void __position(int32_t value) {
-        PlayerEvents::_position(value);
-    }
+  static inline void OnPosition(int32_t value) {
+    PlayerEvents::position_(value);
+  }
 
-    static inline std::function<void(int32_t)> _duration;
+  static inline std::function<void(int32_t)> duration_;
 
-    static inline void __duration(int32_t value) {
-        PlayerEvents::_duration(value);
-    }
+  static inline void OnDuration(int32_t value) {
+    PlayerEvents::duration_(value);
+  }
 
-    friend class Player;
+  friend class Player;
 };
-
 
 class Player {
-public:
-    Player(int32_t id, bool showVideo = false): id(id) {
-        Internal::Player_create(this->id, showVideo);
-        this->events.id = this->id;
-    }
-    
-    void open(Media media) {
-        Internal::Player_open(this->id, media.id);
-    }
+ public:
+  Player(int32_t id, bool show_window = false,
+         std::wstring window_title = VIDEO_WINDOW_CLASS)
+      : id_(id) {
+    Internal::PlayerCreate(id, show_window, window_title.c_str());
+    events_ = std::make_unique<PlayerEvents>(id_);
+  }
 
-    void play() {
-        Internal::Player_play(this->id);
-    }
+  PlayerEvents* events() const { return events_.get(); }
 
-    void pause() {
-        Internal::Player_pause(this->id);
-    }
+  void Open(std::shared_ptr<Media> media) {
+    Internal::PlayerOpen(id_, media->id());
+  }
 
-    void setPosition(int32_t position) {
-        Internal::Player_setPosition(this->id, position);
-    }
+  void Play() { Internal::PlayerPlay(id_); }
 
-    void setVolume(float volume) {
-        Internal::Player_setVolume(this->id, volume);
-    }
+  void Pause() { Internal::PlayerPause(id_); }
 
-    void setRate(float rate) {
-        Internal::Player_setRate(this->id, rate);
-    }
+  void CloseWindow() { Internal::PlayerCloseWindow(id_); }
 
-    void setAudioBalance(float audioBalance) {
-        Internal::Player_setAudioBalance(this->id, audioBalance);
-    }
+  void Seek(int32_t position) { Internal::PlayerSeek(id_, position); }
 
-    void setAutoplay(bool autoplay) {
-        Internal::Player_setAutoplay(this->id, autoplay);
-    }
+  void SetVolume(float volume) { Internal::PlayerSetVolume(id_, volume); }
 
-    void setIsLooping(bool looping) {
-        Internal::Player_setAutoplay(this->id, looping);
-    }
+  void SetRate(float rate) { Internal::PlayerSetRate(id_, rate); }
 
-    int32_t getPosition() {
-        return Internal::Player_getPosition(this->id);
-    }
+  void SetAudioBalance(float audio_balance) {
+    Internal::PlayerSetAudioBalance(id_, audio_balance);
+  }
 
-    float getVolume() {
-        return Internal::Player_getVolume(this->id);
-    }
+  void SetAutoplay(bool autoplay) {
+    Internal::PlayerSetAutoplay(id_, autoplay);
+  }
 
-    int32_t getRate() {
-        return Internal::Player_getRate(this->id);
-    }
+  void SetIsLooping(bool looping) { Internal::PlayerSetAutoplay(id_, looping); }
 
-    float getAudioBalance() {
-        return Internal::Player_getAudioBalance(this->id);
-    }
+  int32_t GetPosition() { return Internal::PlayerGetPosition(id_); }
 
-    bool isAutoplay() {
-        return Internal::Player_isAutoplay(this->id);
-    }
+  float GetVolume() { return Internal::PlayerGetVolume(id_); }
 
-    float isLooping() {
-        return Internal::Player_isLooping(this->id);
-    }
+  int32_t GetRate() { return Internal::PlayerGetRate(id_); }
 
-    void dispose() {
-        Internal::Player_dispose(this->id);
-    }
+  float GetAudioBalance() { return Internal::PlayerGetAudioBalance(id_); }
 
-    PlayerEvents events;
-    
-private:
-    int32_t id;
+  bool IsAutoplay() { return Internal::PlayerIsAutoplay(id_); }
+
+  float IsLooping() { return Internal::PlayerIsLooping(id_); }
+
+  void Dispose() { Internal::PlayerDispose(id_); }
+
+ private:
+  int32_t id_;
+  std::unique_ptr<PlayerEvents> events_;
 };
-
-
 }
-
 
 #ifdef __cplusplus
 }

@@ -8,33 +8,28 @@
 extern "C" {
 #endif
 
-
 namespace lwm {
-
 
 class Player;
 
-
 class Media {
-public:
-    int32_t duration = 0;
+ public:
+  Media(int32_t id, std::wstring uri, bool parse = false) : id_(id) {
+    Internal::MediaCreate(id_, uri.c_str(), parse);
+    if (parse) duration_ = Internal::MediaGetDuration(id_);
+  }
 
-    Media(int32_t id, std::wstring uri, bool parse = false): id(id) {
-        Internal::Media_create(id, uri.c_str(), parse);
-        if (parse) this->duration = Internal::Media_getDuration(this->id);
-    }
+  int32_t id() const { return id_; }
 
-    void dispose() {
-        Internal::Media_dispose(this->id);
-    }
+  int32_t duration() const { return duration_; }
 
-private:
-    int32_t id;
+  void Dispose() { Internal::MediaDispose(id_); }
 
-    friend class Player;
+ private:
+  int32_t id_;
+  int32_t duration_;
+  friend class Player;
 };
-
-
 }
 
 #ifdef __cplusplus

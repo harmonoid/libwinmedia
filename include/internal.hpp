@@ -1,11 +1,12 @@
+#include <memory>
 #include <cstdint>
 
 #ifdef _WIN32
-#define EXPORT __declspec(dllexport)
+#define DLLEXPORT __declspec(dllexport)
 #else
 #define EXPORT
 #endif
-
+#define VIDEO_WINDOW_CLASS L"libwinmedia"
 #ifndef UNICODE
 #define UNICODE
 #define _UNICODE
@@ -16,91 +17,105 @@
 extern "C" {
 #endif
 
-
 namespace Internal {
 
-    EXPORT void Player_create(int32_t id, bool showVideo = false);
+DLLEXPORT void PlayerCreate(int32_t player_id, bool show_window = false,
+                            const wchar_t* window_title = VIDEO_WINDOW_CLASS);
 
-    EXPORT void Player_dispose(int32_t id);
+DLLEXPORT void PlayerDispose(int32_t player_id);
 
-    EXPORT void Player_open(int32_t id, int32_t mediaId);
+DLLEXPORT void PlayerCloseWindow(int32_t player_id);
 
-    EXPORT void Player_play(int32_t id);
+DLLEXPORT void PlayerOpen(int32_t player_id, int32_t media_id);
 
-    EXPORT void Player_pause(int32_t id);
+DLLEXPORT void PlayerPlay(int32_t player_id);
 
-    EXPORT void Player_setPosition(int32_t id, int32_t position);
+DLLEXPORT void PlayerPause(int32_t player_id);
 
-    EXPORT void Player_setVolume(int32_t id, float volume);
+DLLEXPORT void PlayerSeek(int32_t player_id, int32_t position);
 
-    EXPORT void Player_setAudioBalance(int32_t id, float audioBalance);
+DLLEXPORT void PlayerSetVolume(int32_t player_id, float volume);
 
-    EXPORT void Player_setAutoplay(int32_t id, bool autoplay);
+DLLEXPORT void PlayerSetRate(int32_t player_id, float rate);
 
-    EXPORT void Player_setIsLooping(int32_t id, bool looping);
+DLLEXPORT void PlayerSetAudioBalance(int32_t player_id, float audio_balance);
 
-    EXPORT void Player_setRate(int32_t id, float rate);
+DLLEXPORT void PlayerSetAutoplay(int32_t player_id, bool autoplay);
 
-    EXPORT int32_t Player_getPosition(int32_t id);
+DLLEXPORT void PlayerSetIsLooping(int32_t player_id, bool looping);
 
-    EXPORT float Player_getVolume(int32_t id);
+DLLEXPORT int32_t PlayerGetPosition(int32_t player_id);
 
-    EXPORT int32_t Player_getRate(int32_t id);
+DLLEXPORT float PlayerGetVolume(int32_t player_id);
 
-    EXPORT float Player_getAudioBalance(int32_t id);
+DLLEXPORT float PlayerGetRate(int32_t player_id);
 
-    EXPORT bool Player_isAutoplay(int32_t id);
+DLLEXPORT float PlayerGetAudioBalance(int32_t player_id);
 
-    EXPORT bool Player_isLooping(int32_t id);
+DLLEXPORT bool PlayerIsAutoplay(int32_t player_id);
 
-    EXPORT void Player_setIsPlayingEventHandler(int32_t id, void (*callback)(bool isPlaying));
+DLLEXPORT bool PlayerIsLooping(int32_t player_id);
 
-    EXPORT void Player_setIsCompletedEventHandler(int32_t id, void (*callback)(bool isCompleted));
+DLLEXPORT void PlayerSetIsPlayingEventHandler(
+    int32_t player_id, void (*callback)(bool is_playing));
 
-    EXPORT void Player_setIsBufferingEventHandler(int32_t id, void (*callback)(bool isBuffering));
+DLLEXPORT void PlayerSetIsCompletedEventHandler(
+    int32_t player_id, void (*callback)(bool is_completed));
 
-    EXPORT void Player_setVolumeEventHandler(int32_t id, void (*callback)(float volume));
+DLLEXPORT void PlayerSetIsBufferingEventHandler(
+    int32_t player_id, void (*callback)(bool is_buffering));
 
-    EXPORT void Player_setRateEventHandler(int32_t id, void (*callback)(float rate));
+DLLEXPORT void PlayerSetVolumeEventHandler(int32_t player_id,
+                                           void (*callback)(float volume));
 
-    EXPORT void Player_setPositionEventHandler(int32_t id, void (*callback)(int32_t position));
+DLLEXPORT void PlayerSetRateEventHandler(int32_t player_id,
+                                         void (*callback)(float rate));
 
-    EXPORT void Player_setDurationEventHandler(int32_t id, void (*callback)(int32_t duration));
-    
-    EXPORT void Player_NativeControls_create(int32_t id, void (*callback)(int32_t button));
+DLLEXPORT void PlayerSetPositionEventHandler(
+    int32_t player_id, void (*callback)(int32_t position));
 
-    EXPORT void Player_NativeControls_setStatus(int32_t id, int32_t status);
+DLLEXPORT void PlayerSetDurationEventHandler(
+    int32_t player_id, void (*callback)(int32_t duration));
 
-    EXPORT void Player_NativeControls_update(int32_t id, int32_t type, wchar_t** data, const wchar_t* thumbnail);
+DLLEXPORT void PlayerNativeControlsCreate(int32_t player_id,
+                                          void (*callback)(int32_t button));
 
-    EXPORT void Player_NativeControls_clear(int32_t id);
+DLLEXPORT void PlayerNativeControlsSetStatus(int32_t player_id, int32_t status);
 
-    EXPORT void Player_NativeControls_dispose(int32_t id);
+DLLEXPORT void PlayerNativeControlsUpdate(int32_t player_id, int32_t type,
+                                          wchar_t** data,
+                                          const wchar_t* thumbnail);
 
-    EXPORT void Media_create(int32_t id, const wchar_t* uri, bool parse = false);
+DLLEXPORT void PlayerNativeControlsClear(int32_t player_id);
 
-    EXPORT void Media_dispose(int32_t id);
+DLLEXPORT void PlayerNativeControlsDispose(int32_t player_id);
 
-    EXPORT int32_t Media_getDuration(int32_t id);
+DLLEXPORT void MediaCreate(int32_t media_id, const wchar_t* uri,
+                           bool parse = false);
 
-    EXPORT wchar_t** Tags_fromMusic(const wchar_t* uri);
+DLLEXPORT void MediaDispose(int32_t media_id);
 
-    EXPORT wchar_t** Tags_fromVideo(const wchar_t* uri);
+DLLEXPORT int32_t MediaGetDuration(int32_t media_id);
 
-    EXPORT void Tags_extractThumbnail(const wchar_t* source, const wchar_t* save, const wchar_t* fileName, int32_t mode, int32_t size);
+DLLEXPORT wchar_t** TagsFromMusic(const wchar_t* uri);
 
-    EXPORT void NativeControls_create(void (*callback)(int32_t button));
+DLLEXPORT wchar_t** TagsFromVideo(const wchar_t* uri);
 
-    EXPORT void NativeControls_setStatus(int32_t state);
+DLLEXPORT void TagsExtractThumbnail(const wchar_t* media, const wchar_t* folder,
+                                    const wchar_t* file_name, int32_t mode,
+                                    int32_t size);
 
-    EXPORT void NativeControls_update(int32_t type, wchar_t** data, const wchar_t* thumbnail);
+DLLEXPORT void NativeControlsCreate(void (*callback)(int32_t button));
 
-    EXPORT void NativeControls_clear();
+DLLEXPORT void NativeControlsSetStatus(int32_t status);
 
-    EXPORT void NativeControls_dispose();
+DLLEXPORT void NativeControlsUpdate(int32_t type, wchar_t** data,
+                                    const wchar_t* thumbnail);
 
+DLLEXPORT void NativeControlsClear();
+
+DLLEXPORT void NativeControlsDispose();
 }
-
 
 #ifdef __cplusplus
 }

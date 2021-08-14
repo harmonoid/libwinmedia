@@ -9,143 +9,157 @@
 extern "C" {
 #endif
 
-
 namespace lwm {
 
-
 enum ThumbnailMode {
-    picture,
-    video,
-    music,
-    document,
-    list,
-    single,
+  Picture,
+  Video,
+  Music,
+  Document,
+  List,
+  Single,
 };
-
 
 class Tags;
 
-
 class MusicTags {
-public:
-    std::wstring album;
-    std::wstring albumArtist;
-    std::wstring bitrate;
-    std::wstring composers;
-    std::wstring conductors;
-    std::wstring duration;
-    std::wstring genre;
-    std::wstring producers;
-    std::wstring publisher;
-    std::wstring rating;
-    std::wstring subtitle;
-    std::wstring title;
-    std::wstring trackNumber;
-    std::wstring writers;
-    std::wstring year;
+ public:
+  MusicTags(wchar_t** tags) : tags_(tags) {
+    album_ = tags[0];
+    album_artist_ = tags[1];
+    bitrate_ = tags[2];
+    composers_ = tags[3];
+    conductors_ = tags[4];
+    duration_ = tags[5];
+    genre_ = tags[6];
+    producers_ = tags[7];
+    publisher_ = tags[8];
+    rating_ = tags[9];
+    subtitle_ = tags[10];
+    title_ = tags[11];
+    track_number_ = tags[12];
+    writers_ = tags[13];
+    year_ = tags[14];
+  }
 
-private:
-    static MusicTags* get(wchar_t** tags) {
-        MusicTags* musicTags = new MusicTags();
-        musicTags->album = tags[0];
-        musicTags->albumArtist = tags[1];
-        musicTags->bitrate = tags[2];
-        musicTags->composers = tags[3];
-        musicTags->conductors = tags[4];
-        musicTags->duration = tags[5];
-        musicTags->genre = tags[6];
-        musicTags->producers = tags[7];
-        musicTags->publisher = tags[8];
-        musicTags->rating = tags[9];
-        musicTags->subtitle = tags[10];
-        musicTags->title = tags[11];
-        musicTags->trackNumber = tags[12];
-        musicTags->writers = tags[13];
-        musicTags->year = tags[14];
-        for (int index = 0; index < 15; index++) delete tags[index];
-        delete[] tags;
-        return musicTags;
-    }
+  std::wstring& album() { return album_; }
+  std::wstring& album_artist() { return album_artist_; }
+  std::wstring& bitrate() { return bitrate_; }
+  std::wstring& composers() { return composers_; }
+  std::wstring& conductors() { return composers_; }
+  std::wstring& duration() { return duration_; }
+  std::wstring& genre() { return genre_; }
+  std::wstring& producers() { return producers_; }
+  std::wstring& publisher() { return publisher_; }
+  std::wstring& rating() { return rating_; }
+  std::wstring& subtitle() { return subtitle_; }
+  std::wstring& title() { return title_; }
+  std::wstring& track_number() { return track_number_; }
+  std::wstring& writers() { return writers_; }
+  std::wstring& year() { return year_; }
 
-    friend class Tags;
+  ~MusicTags() {
+    for (int index = 0; index < 15; index++) delete tags_[index];
+    delete[] tags_;
+  }
+
+ private:
+  std::wstring album_;
+  std::wstring album_artist_;
+  std::wstring bitrate_;
+  std::wstring composers_;
+  std::wstring conductors_;
+  std::wstring duration_;
+  std::wstring genre_;
+  std::wstring producers_;
+  std::wstring publisher_;
+  std::wstring rating_;
+  std::wstring subtitle_;
+  std::wstring title_;
+  std::wstring track_number_;
+  std::wstring writers_;
+  std::wstring year_;
+  wchar_t** tags_;
+  friend class Tags;
 };
-
 
 class VideoTags {
-public:
-    std::wstring bitrate;
-    std::wstring directors;
-    std::wstring duration;
-    std::wstring height;
-    std::wstring keywords;
-    std::wstring longitude;
-    std::wstring latitude;
-    std::wstring oridentation;
-    std::wstring producers;
-    std::wstring publisher;
-    std::wstring rating;
-    std::wstring subtitle;
-    std::wstring title;
-    std::wstring width;
-    std::wstring writers;
-    std::wstring year;
+ public:
+  std::wstring& bitrate() { return bitrate_; };
+  std::wstring& directors() { return directors_; };
+  std::wstring& duration() { return duration_; };
+  std::wstring& height() { return height_; };
+  std::wstring& keywords() { return keywords_; };
+  std::wstring& longitude() { return longitude_; };
+  std::wstring& latitude() { return latitude_; };
+  std::wstring& orientation() { return orientation_; };
+  std::wstring& producers() { return producers_; };
+  std::wstring& publisher() { return publisher_; };
+  std::wstring& rating() { return rating_; };
+  std::wstring& subtitle() { return subtitle_; };
+  std::wstring& title() { return title_; };
+  std::wstring& width() { return width_; };
+  std::wstring& writers() { return writers_; };
+  std::wstring& year() { return year_; };
 
-private:
-    static VideoTags* get(wchar_t** tags) {
-        VideoTags* videoTags = new VideoTags();
-        videoTags->bitrate = tags[0];
-        videoTags->directors = tags[1];
-        videoTags->duration = tags[2];
-        videoTags->height = tags[3];
-        videoTags->keywords = tags[4];
-        videoTags->longitude = tags[5];
-        videoTags->latitude = tags[6];
-        videoTags->oridentation = tags[7];
-        videoTags->producers = tags[8];
-        videoTags->rating = tags[9];
-        videoTags->subtitle = tags[10];
-        videoTags->title = tags[11];
-        videoTags->width = tags[12];
-        videoTags->writers = tags[13];
-        videoTags->year = tags[14];
-        videoTags->bitrate = tags[15];
-        for (int index = 0; index < 16; index++) delete tags[index];
-        delete[] tags;
-        return videoTags;
-    }
+  VideoTags(wchar_t** tags) : tags_(tags) {
+    bitrate_ = tags[0];
+    directors_ = tags[1];
+    duration_ = tags[2];
+    height_ = tags[3];
+    keywords_ = tags[4];
+    longitude_ = tags[5];
+    latitude_ = tags[6];
+    orientation_ = tags[7];
+    producers_ = tags[8];
+    rating_ = tags[9];
+    subtitle_ = tags[10];
+    title_ = tags[11];
+    width_ = tags[12];
+    writers_ = tags[13];
+    year_ = tags[14];
+    bitrate_ = tags[15];
+  }
 
-    friend class Tags;
+ private:
+  std::wstring bitrate_;
+  std::wstring directors_;
+  std::wstring duration_;
+  std::wstring height_;
+  std::wstring keywords_;
+  std::wstring longitude_;
+  std::wstring latitude_;
+  std::wstring orientation_;
+  std::wstring producers_;
+  std::wstring publisher_;
+  std::wstring rating_;
+  std::wstring subtitle_;
+  std::wstring title_;
+  std::wstring width_;
+  std::wstring writers_;
+  std::wstring year_;
+  wchar_t** tags_;
+  friend class Tags;
 };
-
 
 class Tags {
-public:
-    static MusicTags* fromMusic(std::wstring uri) {
-        return MusicTags::get(
-            Internal::Tags_fromMusic(uri.data())
-        );
-    }
+ public:
+  static MusicTags FromMusic(std::wstring uri) {
+    return MusicTags(Internal::TagsFromMusic(uri.c_str()));
+  }
 
-    static VideoTags* fromVideo(std::wstring uri) {
-        return VideoTags::get(
-            Internal::Tags_fromVideo(uri.data())
-        );
-    }
+  static VideoTags FromVideo(std::wstring uri) {
+    return VideoTags(Internal::TagsFromVideo(uri.c_str()));
+  }
 
-    static void extractThumbnail(std::wstring uri, std::wstring save, std::wstring fileName, ThumbnailMode mode, int32_t size) {
-        Internal::Tags_extractThumbnail(
-            uri.data(),
-            save.data(),
-            fileName.data(),
-            static_cast<int>(mode),
-            size
-        );
-    }
+  static void ExtractThumbnail(std::wstring uri, std::wstring save,
+                               std::wstring fileName, ThumbnailMode mode,
+                               int32_t size) {
+    Internal::TagsExtractThumbnail(uri.c_str(), save.c_str(), fileName.c_str(),
+                                   static_cast<int>(mode), size);
+  }
 };
-
-
 }
-
 
 #ifdef __cplusplus
 }
