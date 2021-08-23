@@ -21,6 +21,12 @@ class PlayerEvents {
 
   PlayerEvents(int32_t id) : id_(id) {}
 
+  // void Frame(std::function<void(uint8_t* data, int32_t size, int32_t width,
+  //                               int32_t height)> listener) {
+  //   PlayerEvents::frame_ = listener;
+  //   Internal::PlayerSetFrameEventHandler(id_, &PlayerEvents::OnFrame);
+  // }
+
   void IsPlaying(std::function<void(bool)> listener) {
     PlayerEvents::is_playing_ = listener;
     Internal::PlayerSetIsPlayingEventHandler(id_, &PlayerEvents::OnIsPlaying);
@@ -60,6 +66,14 @@ class PlayerEvents {
 
  private:
   int32_t id_;
+
+  // static inline std::function<void(uint8_t*, int32_t, int32_t, int32_t)>
+  // frame_;
+
+  // static inline void OnFrame(uint8_t* data, int32_t size, int32_t width,
+  //                            int32_t height) {
+  //   PlayerEvents::frame_(data, size, width, height);
+  // }
 
   static inline std::function<void(bool)> is_playing_;
 
@@ -113,13 +127,28 @@ class Player {
 
   PlayerEvents* events() const { return events_.get(); }
 
-  void Open(std::shared_ptr<Media> media) {
-    Internal::PlayerOpen(id_, media->id());
+  void Open(std::vector<std::shared_ptr<Media>> medias) {
+    std::vector<const wchar_t*> uris;
+    uris.reserve(medias.size());
+    for (const auto& media : medias) {
+      uris.emplace_back(media->uri().c_str());
+    }
+    Internal::PlayerOpen(id_, uris.size(), uris.data());
   }
 
   void Play() { Internal::PlayerPlay(id_); }
 
   void Pause() { Internal::PlayerPause(id_); }
+
+  void Next() { Internal::PlayerNext(id_); }
+
+  void Back() { Internal::PlayerBack(id_); }
+
+  void Jump(int32_t index) { Internal::PlayerJump(id_, index); }
+
+  void ShowWindow(std::wstring window_title = VIDEO_WINDOW_CLASS) {
+    Internal::PlayerShowWindow(id_, window_title.c_str());
+  }
 
   void CloseWindow() { Internal::PlayerCloseWindow(id_); }
 
@@ -143,13 +172,13 @@ class Player {
 
   float GetVolume() { return Internal::PlayerGetVolume(id_); }
 
-  int32_t GetRate() { return Internal::PlayerGetRate(id_); }
+  float GetRate() { return Internal::PlayerGetRate(id_); }
 
   float GetAudioBalance() { return Internal::PlayerGetAudioBalance(id_); }
 
   bool IsAutoplay() { return Internal::PlayerIsAutoplay(id_); }
 
-  float IsLooping() { return Internal::PlayerIsLooping(id_); }
+  bool IsLooping() { return Internal::PlayerIsLooping(id_); }
 
   void Dispose() { Internal::PlayerDispose(id_); }
 

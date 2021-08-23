@@ -4,7 +4,7 @@
 #ifdef _WIN32
 #define DLLEXPORT __declspec(dllexport)
 #else
-#define EXPORT
+#define DLLEXPORT
 #endif
 #define VIDEO_WINDOW_CLASS L"libwinmedia"
 #ifndef UNICODE
@@ -19,18 +19,32 @@ extern "C" {
 
 namespace Internal {
 
+DLLEXPORT void PlayerShowWindow(
+    int32_t player_id, const wchar_t* window_title = VIDEO_WINDOW_CLASS);
+
+DLLEXPORT void PlayerCloseWindow(int32_t player_id);
+
 DLLEXPORT void PlayerCreate(int32_t player_id, bool show_window = false,
                             const wchar_t* window_title = VIDEO_WINDOW_CLASS);
 
 DLLEXPORT void PlayerDispose(int32_t player_id);
 
-DLLEXPORT void PlayerCloseWindow(int32_t player_id);
-
-DLLEXPORT void PlayerOpen(int32_t player_id, int32_t media_id);
+DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size,
+                          const wchar_t** uris);
 
 DLLEXPORT void PlayerPlay(int32_t player_id);
 
 DLLEXPORT void PlayerPause(int32_t player_id);
+
+DLLEXPORT void PlayerAdd(int32_t player_id, const wchar_t* uri);
+
+DLLEXPORT void PlayerRemove(int32_t player_id, int32_t index);
+
+DLLEXPORT void PlayerNext(int32_t player_id);
+
+DLLEXPORT void PlayerBack(int32_t player_id);
+
+DLLEXPORT void PlayerJump(int32_t player_id, int32_t index);
 
 DLLEXPORT void PlayerSeek(int32_t player_id, int32_t position);
 
@@ -76,6 +90,9 @@ DLLEXPORT void PlayerSetPositionEventHandler(
 
 DLLEXPORT void PlayerSetDurationEventHandler(
     int32_t player_id, void (*callback)(int32_t duration));
+
+DLLEXPORT void PlayerSetIndexEventHandler(int32_t player_id,
+                                          void (*callback)(int32_t index));
 
 DLLEXPORT void PlayerNativeControlsCreate(int32_t player_id,
                                           void (*callback)(int32_t button));

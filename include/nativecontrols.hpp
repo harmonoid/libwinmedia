@@ -88,9 +88,9 @@ class VideoNativeControlState : public NativeControlsState {
 
 class NativeControls {
  public:
-  NativeControls(std::function<void(NativeControlsButton)> handler) {
+  NativeControls(std::function<void(NativeControlsButton)> listener) {
     if (!g_native_controls_exist) {
-      NativeControls::handler = handler;
+      NativeControls::handler = listener;
       Internal::NativeControlsCreate(&NativeControls::_handler);
       g_native_controls_exist = true;
     }
