@@ -34,7 +34,6 @@
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.Media.Core.h>
 #include <winrt/Windows.Media.Playback.h>
-#include <winrt/Windows.Media.Playlists.h>
 #include <winrt/Windows.Media.Audio.h>
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>
@@ -49,6 +48,9 @@
 #else
 #define DLLEXPORT
 #endif
+#ifdef DART_VM
+#include "external/dart_api/dart_api_dl.h"
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57,6 +59,9 @@ extern "C" {
 #define VIDEO_WINDOW_CLASS L"libwinmedia"
 #define TAG_SIZE 200
 #define TO_MILLISECONDS(timespan) timespan.count() / 10000
+#define TO_STRING(wide_string) \
+  std::string(wide_string.begin(), wide_string.end())
+#define TO_WIDESTRING(string) std::wstring(string.begin(), string.end())
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage;
@@ -71,6 +76,8 @@ static std::unordered_map<int32_t, std::unique_ptr<std::thread>>
     g_players_window_threads;
 static std::unordered_map<int32_t, HWND> g_players_window_handles;
 static std::unordered_map<int32_t, HWND> g_players_xaml_handles;
+static std::unordered_map<int32_t, Playback::MediaPlaybackList>
+    g_media_playback_lists;
 static std::unordered_map<int32_t, Core::MediaSource> g_medias;
 static bool g_smtc_exist;
 
@@ -78,66 +85,90 @@ LRESULT CALLBACK VideoWindowProc(HWND, UINT, WPARAM, LPARAM);
 
 namespace {
 
+#ifdef DART_VM
+typedef bool (*Dart_PostCObjectType)(Dart_Port port_id, Dart_CObject* message);
+
+Dart_PostCObjectType g_dart_post_C_object;
+Dart_Port g_callback_port;
+
+DLLEXPORT void InitializeDartApi(Dart_PostCObjectType dart_post_C_object,
+                                 Dart_Port callback_port) {
+  g_dart_post_C_object = dart_post_C_object;
+  g_callback_port = callback_port;
+}
+#endif
+
+DLLEXPORT void PlayerShowWindow(int32_t player_id,
+                                wchar_t* window_title = VIDEO_WINDOW_CLASS) {
+  g_players_window_threads[player_id] =
+      std::make_unique<std::thread>([=]() -> void {
+        STARTUPINFO startup_info;
+        GetStartupInfo(&startup_info);
+        WNDCLASSEXW window_class;
+        SecureZeroMemory(&window_class, sizeof(window_class));
+        window_class.cbSize = sizeof(window_class);
+        window_class.style = CS_HREDRAW | CS_VREDRAW;
+        window_class.lpfnWndProc = VideoWindowProc;
+        window_class.hInstance = 0;
+        window_class.lpszClassName = VIDEO_WINDOW_CLASS;
+        window_class.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
+        window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+        ::RegisterClassExW(&window_class);
+        g_players_window_handles[player_id] = ::CreateWindowExW(
+            0L, VIDEO_WINDOW_CLASS, window_title,
+            WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
+            CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, 0, nullptr);
+        if (!g_players_window_handles[player_id]) {
+          throw std::exception("COULD_NOT_CREATE_WIN32_WINDOW", -1);
+        }
+        winrt::init_apartment(winrt::apartment_type::multi_threaded);
+        const auto window_xaml_manager =
+            Hosting::WindowsXamlManager::InitializeForCurrentThread();
+        Hosting::DesktopWindowXamlSource desktop_window_xaml_source = {};
+        const auto interop =
+            desktop_window_xaml_source.as<IDesktopWindowXamlSourceNative>();
+        winrt::check_hresult(
+            interop->AttachToWindow(g_players_window_handles[player_id]));
+        interop->get_WindowHandle(&g_players_xaml_handles[player_id]);
+        if (!g_players_xaml_handles[player_id]) {
+          throw std::exception("COULD_NOT_CREATE_XAML_SOURCE", -2);
+        }
+        SetWindowLongPtr(
+            g_players_window_handles[player_id], GWLP_USERDATA,
+            reinterpret_cast<LONG_PTR>(g_players_xaml_handles[player_id]));
+        RECT rect = {0, 0, 0, 0};
+        ::GetClientRect(g_players_window_handles[player_id], &rect);
+        ::SetWindowPos(g_players_xaml_handles[player_id], nullptr, 0, 0,
+                       rect.right, rect.bottom, SWP_SHOWWINDOW);
+        Controls::MediaPlayerElement player_element =
+            Controls::MediaPlayerElement();
+        player_element.SetMediaPlayer(g_players.at(player_id));
+        desktop_window_xaml_source.Content(player_element);
+        ::ShowWindow(g_players_xaml_handles[player_id],
+                     startup_info.wShowWindow);
+        ::UpdateWindow(g_players_xaml_handles[player_id]);
+        MSG msg = {};
+        while (::GetMessageW(&msg, nullptr, 0, 0)) {
+          ::TranslateMessage(&msg);
+          ::DispatchMessageW(&msg);
+        }
+      });
+}
+
+DLLEXPORT void PlayerCloseWindow(int32_t player_id) {
+  ::CloseWindow(g_players_window_handles.at(player_id));
+  g_players_window_handles.erase(player_id);
+  g_players_xaml_handles.erase(player_id);
+  g_players_window_threads.erase(player_id);
+}
+
 DLLEXPORT void PlayerCreate(int32_t player_id, bool show_window = false,
                             wchar_t* window_title = VIDEO_WINDOW_CLASS) {
   g_players.insert(std::make_pair(player_id, Playback::MediaPlayer()));
+  g_media_playback_lists.insert(
+      std::make_pair(player_id, Playback::MediaPlaybackList()));
   g_players.at(player_id).SystemMediaTransportControls().IsEnabled(false);
-  if (show_window) {
-    g_players_window_threads[player_id] =
-        std::make_unique<std::thread>([=]() -> void {
-          STARTUPINFO startup_info;
-          GetStartupInfo(&startup_info);
-          WNDCLASSEXW window_class;
-          SecureZeroMemory(&window_class, sizeof(window_class));
-          window_class.cbSize = sizeof(window_class);
-          window_class.style = CS_HREDRAW | CS_VREDRAW;
-          window_class.lpfnWndProc = VideoWindowProc;
-          window_class.hInstance = 0;
-          window_class.lpszClassName = VIDEO_WINDOW_CLASS;
-          window_class.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
-          window_class.hbrBackground =
-              reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
-          ::RegisterClassExW(&window_class);
-          g_players_window_handles[player_id] = ::CreateWindowExW(
-              0L, VIDEO_WINDOW_CLASS, window_title,
-              WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
-              CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, 0, nullptr);
-          if (!g_players_window_handles[player_id]) {
-            throw std::exception("COULD_NOT_CREATE_WIN32_WINDOW", -1);
-          }
-          winrt::init_apartment(winrt::apartment_type::multi_threaded);
-          const auto window_xaml_manager =
-              Hosting::WindowsXamlManager::InitializeForCurrentThread();
-          Hosting::DesktopWindowXamlSource desktop_window_xaml_source = {};
-          const auto interop =
-              desktop_window_xaml_source.as<IDesktopWindowXamlSourceNative>();
-          winrt::check_hresult(
-              interop->AttachToWindow(g_players_window_handles[player_id]));
-          interop->get_WindowHandle(&g_players_xaml_handles[player_id]);
-          if (!g_players_xaml_handles[player_id]) {
-            throw std::exception("COULD_NOT_CREATE_XAML_SOURCE", -2);
-          }
-          SetWindowLongPtr(
-              g_players_window_handles[player_id], GWLP_USERDATA,
-              reinterpret_cast<LONG_PTR>(g_players_xaml_handles[player_id]));
-          RECT rect = {0, 0, 0, 0};
-          ::GetClientRect(g_players_window_handles[player_id], &rect);
-          ::SetWindowPos(g_players_xaml_handles[player_id], nullptr, 0, 0,
-                         rect.right, rect.bottom, SWP_SHOWWINDOW);
-          Controls::MediaPlayerElement player_element =
-              Controls::MediaPlayerElement();
-          player_element.SetMediaPlayer(g_players.at(player_id));
-          desktop_window_xaml_source.Content(player_element);
-          ::ShowWindow(g_players_xaml_handles[player_id],
-                       startup_info.wShowWindow);
-          ::UpdateWindow(g_players_xaml_handles[player_id]);
-          MSG msg = {};
-          while (::GetMessageW(&msg, nullptr, 0, 0)) {
-            ::TranslateMessage(&msg);
-            ::DispatchMessageW(&msg);
-          }
-        });
-  }
+  if (show_window) PlayerShowWindow(player_id, window_title);
 }
 
 DLLEXPORT void PlayerDispose(int32_t player_id) {
@@ -149,22 +180,150 @@ DLLEXPORT void PlayerDispose(int32_t player_id) {
   g_players.erase(player_id);
 }
 
-DLLEXPORT void PlayerCloseWindow(int32_t player_id) {
-  ::CloseWindow(g_players_window_handles.at(player_id));
-  g_players_window_handles.erase(player_id);
-  g_players_xaml_handles.erase(player_id);
-  g_players_window_threads.erase(player_id);
-}
-
-DLLEXPORT void PlayerOpen(int32_t player_id, int32_t media_id) {
-  g_players.at(player_id)
-      .Source(Playback::MediaPlaybackItem(g_medias.at(media_id)));
+DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size,
+                          const wchar_t** uris) {
+  g_players.at(player_id).Pause();
+  g_media_playback_lists.at(player_id).Items().Clear();
+  for (int32_t index = 0; index < size; index++) {
+    g_media_playback_lists.at(player_id).Items().Append(
+        Core::MediaSource::CreateFromUri(Uri(uris[index])));
+  }
+  g_players.at(player_id).Source(g_media_playback_lists.at(player_id));
+#ifdef DART_VM
+  auto value_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size() +
+                       2]);
+  auto value_object_refs = std::unique_ptr<Dart_CObject* []>(
+      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size() +
+                        2]);
+  Dart_CObject* player_id_object = &value_objects[0];
+  player_id_object->type = Dart_CObject_kInt32;
+  player_id_object->value.as_int32 = player_id;
+  value_object_refs[0] = player_id_object;
+  Dart_CObject* type_object = &value_objects[1];
+  type_object->type = Dart_CObject_kString;
+  type_object->value.as_string = "Open";
+  value_object_refs[1] = type_object;
+  for (int32_t i = 2; i < g_media_playback_lists.at(player_id).Items().Size();
+       i++) {
+    Dart_CObject* value_object = &value_objects[i];
+    value_object->type = Dart_CObject_kString;
+    value_object->value.as_string =
+        const_cast<char*>(TO_STRING(g_media_playback_lists.at(player_id)
+                                        .Items()
+                                        .GetAt(i)
+                                        .Source()
+                                        .Uri()
+                                        .ToString())
+                              .c_str());
+    value_object_refs[i] = value_object;
+  }
+  Dart_CObject return_object;
+  return_object.type = Dart_CObject_kArray;
+  return_object.value.as_array.length =
+      g_media_playback_lists.at(player_id).Items().Size() + 2;
+  return_object.value.as_array.values = value_object_refs.get();
+  g_dart_post_C_object(g_callback_port, &return_object);
+#endif
 }
 
 DLLEXPORT void PlayerPlay(int32_t player_id) { g_players.at(player_id).Play(); }
 
 DLLEXPORT void PlayerPause(int32_t player_id) {
   g_players.at(player_id).Pause();
+}
+
+DLLEXPORT void PlayerAdd(int32_t player_id, const wchar_t* uri) {
+  g_media_playback_lists.at(player_id).Items().Append(
+      Core::MediaSource::CreateFromUri(Uri(uri)));
+#ifdef DART_VM
+  auto value_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size() +
+                       2]);
+  auto value_object_refs = std::unique_ptr<Dart_CObject* []>(
+      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size() +
+                        2]);
+  Dart_CObject* player_id_object = &value_objects[0];
+  player_id_object->type = Dart_CObject_kInt32;
+  player_id_object->value.as_int32 = player_id;
+  value_object_refs[0] = player_id_object;
+  Dart_CObject* type_object = &value_objects[1];
+  type_object->type = Dart_CObject_kString;
+  type_object->value.as_string = "Open";
+  value_object_refs[1] = type_object;
+  for (int32_t i = 2; i < g_media_playback_lists.at(player_id).Items().Size();
+       i++) {
+    Dart_CObject* value_object = &value_objects[i];
+    value_object->type = Dart_CObject_kString;
+    value_object->value.as_string =
+        const_cast<char*>(TO_STRING(g_media_playback_lists.at(player_id)
+                                        .Items()
+                                        .GetAt(i)
+                                        .Source()
+                                        .Uri()
+                                        .ToString())
+                              .c_str());
+    value_object_refs[i] = value_object;
+  }
+  Dart_CObject return_object;
+  return_object.type = Dart_CObject_kArray;
+  return_object.value.as_array.length =
+      g_media_playback_lists.at(player_id).Items().Size() + 2;
+  return_object.value.as_array.values = value_object_refs.get();
+  g_dart_post_C_object(g_callback_port, &return_object);
+#endif
+}
+
+DLLEXPORT void PlayerRemove(int32_t player_id, int32_t index) {
+  g_media_playback_lists.at(player_id).Items().RemoveAt(index);
+#ifdef DART_VM
+  auto value_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size() +
+                       2]);
+  auto value_object_refs = std::unique_ptr<Dart_CObject* []>(
+      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size() +
+                        2]);
+  Dart_CObject* player_id_object = &value_objects[0];
+  player_id_object->type = Dart_CObject_kInt32;
+  player_id_object->value.as_int32 = player_id;
+  value_object_refs[0] = player_id_object;
+  Dart_CObject* type_object = &value_objects[1];
+  type_object->type = Dart_CObject_kString;
+  type_object->value.as_string = "Open";
+  value_object_refs[1] = type_object;
+  for (int32_t i = 2; i < g_media_playback_lists.at(player_id).Items().Size();
+       i++) {
+    Dart_CObject* value_object = &value_objects[i];
+    value_object->type = Dart_CObject_kString;
+    value_object->value.as_string =
+        const_cast<char*>(TO_STRING(g_media_playback_lists.at(player_id)
+                                        .Items()
+                                        .GetAt(i)
+                                        .Source()
+                                        .Uri()
+                                        .ToString())
+                              .c_str());
+    value_object_refs[i] = value_object;
+  }
+  Dart_CObject return_object;
+  return_object.type = Dart_CObject_kArray;
+  return_object.value.as_array.length =
+      g_media_playback_lists.at(player_id).Items().Size() + 2;
+  return_object.value.as_array.values = value_object_refs.get();
+  g_dart_post_C_object(g_callback_port, &return_object);
+#endif
+}
+
+DLLEXPORT void PlayerNext(int32_t player_id) {
+  g_media_playback_lists.at(player_id).MoveNext();
+}
+
+DLLEXPORT void PlayerBack(int32_t player_id) {
+  g_media_playback_lists.at(player_id).MovePrevious();
+}
+
+DLLEXPORT void PlayerJump(int32_t player_id, int32_t index) {
+  g_media_playback_lists.at(player_id).MoveTo(index);
 }
 
 DLLEXPORT void PlayerSeek(int32_t player_id, int32_t position) {
@@ -216,21 +375,31 @@ DLLEXPORT bool PlayerIsLooping(int32_t player_id) {
   return g_players.at(player_id).IsLoopingEnabled();
 }
 
-// TODO (alexmercerind): Implement PlayerSetFrameEventHandler.
-// DLLEXPORT void PlayerSetFrameEventHandler(int32_t player_id, int32_t width,
-//                                           int32_t height,
-//                                           void (*callback)(uint8_t* frame)) {
-//   IDirect3DSurface surface = IDirect3DSurface();
-//   Streams::IBuffer buffer = Streams::IBuffer();
+// TODO (alexmercerind): Implement frame callbacks.
+// Current summary:
+// Tried calling `CopyFrameToVideoSurface` directly upon IDirect3DSurface, which
+// results in accessing invalid memory location.
+// Later on tried using win2D from NuGet, but it results in class not
+// registered.
+//
+// DLLEXPORT void PlayerSetFrameEventHandler(
+//     int32_t player_id, void (*callback)(uint8_t* buffer, int32_t size,
+//                                         int32_t width, int32_t height)) {
 //   g_players.at(player_id).IsVideoFrameServerEnabled(true);
-//   g_players.at(player_id)
-//       .VideoFrameAvailable([=](auto, const auto& args) -> void {
-//         g_players.at(player_id).CopyFrameToVideoSurface(surface);
-//         SoftwareBitmap bitmap =
-//             SoftwareBitmap::CreateCopyFromSurfaceAsync(surface).get();
-//         bitmap.CopyToBuffer(buffer);
-//         (*callback)(buffer.Data());
-//       });
+//   winrt::Microsoft::Graphics::Canvas::CanvasDevice canvasDevice =
+//       winrt::Microsoft::Graphics::Canvas::CanvasDevice::GetSharedDevice();
+//   SoftwareBitmap bitmap = SoftwareBitmap(BitmapPixelFormat::Rgba8, 480, 360,
+//                                          BitmapAlphaMode::Ignore);
+//   winrt::Microsoft::Graphics::Canvas::CanvasBitmap surface =
+//       winrt::Microsoft::Graphics::Canvas::CanvasBitmap::
+//           CreateFromSoftwareBitmap(canvasDevice, bitmap);
+//   g_players.at(player_id).VideoFrameAvailable([=](auto,
+//                                                   const auto& args) -> void {
+//     g_players.at(player_id).CopyFrameToVideoSurface(surface);
+//     (*callback)(surface.GetPixelBytes().data(),
+//     surface.GetPixelBytes().size(),
+//                 bitmap.PixelWidth(), bitmap.PixelHeight());
+//   });
 // }
 
 DLLEXPORT void PlayerSetIsPlayingEventHandler(
@@ -239,35 +408,173 @@ DLLEXPORT void PlayerSetIsPlayingEventHandler(
       [=](auto, const auto& args) -> void {
         if (g_players.at(player_id).PlaybackSession().PlaybackState() ==
             Playback::MediaPlaybackState::Playing) {
+#ifdef DART_VM
+          Dart_CObject player_id_object;
+          player_id_object.type = Dart_CObject_kInt32;
+          player_id_object.value.as_int32 = player_id;
+          Dart_CObject type_object;
+          type_object.type = Dart_CObject_kString;
+          type_object.value.as_string = "IsPlaying";
+          Dart_CObject is_playing_object;
+          is_playing_object.type = Dart_CObject_kBool;
+          is_playing_object.value.as_bool = true;
+          Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                           &is_playing_object};
+          Dart_CObject return_object;
+          return_object.type = Dart_CObject_kArray;
+          return_object.value.as_array.length = 3;
+          return_object.value.as_array.values = value_objects;
+          g_dart_post_C_object(g_callback_port, &return_object);
+#else
           (*callback)(true);
+#endif
         }
         if (g_players.at(player_id).PlaybackSession().PlaybackState() ==
             Playback::MediaPlaybackState::Paused) {
+#ifdef DART_VM
+          Dart_CObject player_id_object;
+          player_id_object.type = Dart_CObject_kInt32;
+          player_id_object.value.as_int32 = player_id;
+          Dart_CObject type_object;
+          type_object.type = Dart_CObject_kString;
+          type_object.value.as_string = "IsPlaying";
+          Dart_CObject is_playing_object;
+          is_playing_object.type = Dart_CObject_kBool;
+          is_playing_object.value.as_bool = false;
+          Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                           &is_playing_object};
+          Dart_CObject return_object;
+          return_object.type = Dart_CObject_kArray;
+          return_object.value.as_array.length = 3;
+          return_object.value.as_array.values = value_objects;
+          g_dart_post_C_object(g_callback_port, &return_object);
+#else
           (*callback)(false);
+#endif
         }
       });
 }
 
 DLLEXPORT void PlayerSetIsCompletedEventHandler(
     int32_t player_id, void (*callback)(bool is_completed)) {
-  g_players.at(player_id)
-      .MediaEnded([=](auto, const auto& args) -> void { (*callback)(true); });
+  g_players.at(player_id).MediaEnded([=](auto, const auto& args) -> void {
+#ifdef DART_VM
+    Dart_CObject player_id_object;
+    player_id_object.type = Dart_CObject_kInt32;
+    player_id_object.value.as_int32 = player_id;
+    Dart_CObject type_object;
+    type_object.type = Dart_CObject_kString;
+    type_object.value.as_string = "IsCompleted";
+    Dart_CObject is_completed_object;
+    is_completed_object.type = Dart_CObject_kBool;
+    is_completed_object.value.as_bool = true;
+    Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                     &is_completed_object};
+    Dart_CObject return_object;
+    return_object.type = Dart_CObject_kArray;
+    return_object.value.as_array.length = 3;
+    return_object.value.as_array.values = value_objects;
+    g_dart_post_C_object(g_callback_port, &return_object);
+#else
+    (*callback)(true);
+#endif
+  });
   g_players.at(player_id).PlaybackSession().PlaybackStateChanged(
-      [=](auto, const auto& args) -> void { (*callback)(false); });
+      [=](auto, const auto& args) -> void {
+#ifdef DART_VM
+        Dart_CObject player_id_object;
+        player_id_object.type = Dart_CObject_kInt32;
+        player_id_object.value.as_int32 = player_id;
+        Dart_CObject type_object;
+        type_object.type = Dart_CObject_kString;
+        type_object.value.as_string = "IsCompleted";
+        Dart_CObject is_completed_object;
+        is_completed_object.type = Dart_CObject_kBool;
+        is_completed_object.value.as_bool = false;
+        Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                         &is_completed_object};
+        Dart_CObject return_object;
+        return_object.type = Dart_CObject_kArray;
+        return_object.value.as_array.length = 3;
+        return_object.value.as_array.values = value_objects;
+        g_dart_post_C_object(g_callback_port, &return_object);
+#else
+        (*callback)(false);
+#endif
+      });
 }
 
 DLLEXPORT void PlayerSetIsBufferingEventHandler(
     int32_t player_id, void (*callback)(bool is_buffering)) {
-  g_players.at(player_id).BufferingStarted(
-      [=](auto, const auto& args) -> void { (*callback)(true); });
-  g_players.at(player_id).BufferingEnded(
-      [=](auto, const auto& args) -> void { (*callback)(false); });
+  g_players.at(player_id).BufferingStarted([=](auto, const auto& args) -> void {
+#ifdef DART_VM
+    Dart_CObject player_id_object;
+    player_id_object.type = Dart_CObject_kInt32;
+    player_id_object.value.as_int32 = player_id;
+    Dart_CObject type_object;
+    type_object.type = Dart_CObject_kString;
+    type_object.value.as_string = "IsBuffering";
+    Dart_CObject is_buffering_object;
+    is_buffering_object.type = Dart_CObject_kBool;
+    is_buffering_object.value.as_bool = true;
+    Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                     &is_buffering_object};
+    Dart_CObject return_object;
+    return_object.type = Dart_CObject_kArray;
+    return_object.value.as_array.length = 3;
+    return_object.value.as_array.values = value_objects;
+    g_dart_post_C_object(g_callback_port, &return_object);
+#else
+    (*callback)(true);
+#endif
+  });
+  g_players.at(player_id).BufferingEnded([=](auto, const auto& args) -> void {
+#ifdef DART_VM
+    Dart_CObject player_id_object;
+    player_id_object.type = Dart_CObject_kInt32;
+    player_id_object.value.as_int32 = player_id;
+    Dart_CObject type_object;
+    type_object.type = Dart_CObject_kString;
+    type_object.value.as_string = "IsBuffering";
+    Dart_CObject is_buffering_object;
+    is_buffering_object.type = Dart_CObject_kBool;
+    is_buffering_object.value.as_bool = false;
+    Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                     &is_buffering_object};
+    Dart_CObject return_object;
+    return_object.type = Dart_CObject_kArray;
+    return_object.value.as_array.length = 3;
+    return_object.value.as_array.values = value_objects;
+    g_dart_post_C_object(g_callback_port, &return_object);
+#else
+    (*callback)(false);
+#endif
+  });
 }
 
 DLLEXPORT void PlayerSetVolumeEventHandler(int32_t player_id,
                                            void (*callback)(float volume)) {
   g_players.at(player_id).VolumeChanged([=](auto, const auto& args) -> void {
+#ifdef DART_VM
+    Dart_CObject player_id_object;
+    player_id_object.type = Dart_CObject_kInt32;
+    player_id_object.value.as_int32 = player_id;
+    Dart_CObject type_object;
+    type_object.type = Dart_CObject_kString;
+    type_object.value.as_string = "Volume";
+    Dart_CObject volume_object;
+    volume_object.type = Dart_CObject_kDouble;
+    volume_object.value.as_double = g_players.at(player_id).Volume();
+    Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                     &volume_object};
+    Dart_CObject return_object;
+    return_object.type = Dart_CObject_kArray;
+    return_object.value.as_array.length = 3;
+    return_object.value.as_array.values = value_objects;
+    g_dart_post_C_object(g_callback_port, &return_object);
+#else
     (*callback)(g_players.at(player_id).Volume());
+#endif
   });
 }
 
@@ -275,7 +582,26 @@ DLLEXPORT void PlayerSetRateEventHandler(int32_t player_id,
                                          void (*callback)(float rate)) {
   g_players.at(player_id)
       .MediaPlayerRateChanged([=](auto, const auto& args) -> void {
+#ifdef DART_VM
+        Dart_CObject player_id_object;
+        player_id_object.type = Dart_CObject_kInt32;
+        player_id_object.value.as_int32 = player_id;
+        Dart_CObject type_object;
+        type_object.type = Dart_CObject_kString;
+        type_object.value.as_string = "Rate";
+        Dart_CObject rate_object;
+        rate_object.type = Dart_CObject_kDouble;
+        rate_object.value.as_double = g_players.at(player_id).PlaybackRate();
+        Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                         &rate_object};
+        Dart_CObject return_object;
+        return_object.type = Dart_CObject_kArray;
+        return_object.value.as_array.length = 3;
+        return_object.value.as_array.values = value_objects;
+        g_dart_post_C_object(g_callback_port, &return_object);
+#else
         (*callback)(g_players.at(player_id).PlaybackRate());
+#endif
       });
 }
 
@@ -283,8 +609,28 @@ DLLEXPORT void PlayerSetPositionEventHandler(
     int32_t player_id, void (*callback)(int32_t position)) {
   g_players.at(player_id).PlaybackSession().PositionChanged(
       [=](auto, const auto& args) -> void {
+#ifdef DART_VM
+        Dart_CObject player_id_object;
+        player_id_object.type = Dart_CObject_kInt32;
+        player_id_object.value.as_int32 = player_id;
+        Dart_CObject type_object;
+        type_object.type = Dart_CObject_kString;
+        type_object.value.as_string = "Position";
+        Dart_CObject position_object;
+        position_object.type = Dart_CObject_kInt32;
+        position_object.value.as_int32 = TO_MILLISECONDS(
+            g_players.at(player_id).PlaybackSession().Position());
+        Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                         &position_object};
+        Dart_CObject return_object;
+        return_object.type = Dart_CObject_kArray;
+        return_object.value.as_array.length = 3;
+        return_object.value.as_array.values = value_objects;
+        g_dart_post_C_object(g_callback_port, &return_object);
+#else
         (*callback)(TO_MILLISECONDS(
             g_players.at(player_id).PlaybackSession().Position()));
+#endif
       });
 }
 
@@ -292,8 +638,56 @@ DLLEXPORT void PlayerSetDurationEventHandler(
     int32_t player_id, void (*callback)(int32_t duration)) {
   g_players.at(player_id).PlaybackSession().NaturalDurationChanged(
       [=](auto, const auto& args) -> void {
+#ifdef DART_VM
+        Dart_CObject player_id_object;
+        player_id_object.type = Dart_CObject_kInt32;
+        player_id_object.value.as_int32 = player_id;
+        Dart_CObject type_object;
+        type_object.type = Dart_CObject_kString;
+        type_object.value.as_string = "Duration";
+        Dart_CObject duration_object;
+        duration_object.type = Dart_CObject_kInt32;
+        duration_object.value.as_int32 = TO_MILLISECONDS(
+            g_players.at(player_id).PlaybackSession().NaturalDuration());
+        Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                         &duration_object};
+        Dart_CObject return_object;
+        return_object.type = Dart_CObject_kArray;
+        return_object.value.as_array.length = 3;
+        return_object.value.as_array.values = value_objects;
+        g_dart_post_C_object(g_callback_port, &return_object);
+#else
         (*callback)(TO_MILLISECONDS(
             g_players.at(player_id).PlaybackSession().NaturalDuration()));
+#endif
+      });
+}
+
+DLLEXPORT void PlayerSetIndexEventHandler(int32_t player_id,
+                                          void (*callback)(int32_t index)) {
+  g_media_playback_lists.at(player_id)
+      .CurrentItemChanged([=](auto, const auto& args) -> void {
+#ifdef DART_VM
+        Dart_CObject player_id_object;
+        player_id_object.type = Dart_CObject_kInt32;
+        player_id_object.value.as_int32 = player_id;
+        Dart_CObject type_object;
+        type_object.type = Dart_CObject_kString;
+        type_object.value.as_string = "Index";
+        Dart_CObject index_object;
+        index_object.type = Dart_CObject_kInt32;
+        index_object.value.as_int32 =
+            g_media_playback_lists.at(player_id).CurrentItemIndex();
+        Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                         &index_object};
+        Dart_CObject return_object;
+        return_object.type = Dart_CObject_kArray;
+        return_object.value.as_array.length = 3;
+        return_object.value.as_array.values = value_objects;
+        g_dart_post_C_object(g_callback_port, &return_object);
+#else
+        (*callback)(g_media_playback_lists.at(player_id).CurrentItemIndex());
+#endif
       });
 }
 
@@ -544,7 +938,27 @@ DLLEXPORT void NativeControlsCreate(void (*callback)(int32_t button)) {
               controls.PlaybackStatus(MediaPlaybackStatus::Playing);
             if (args.Button() == SystemMediaTransportControlsButton::Pause)
               controls.PlaybackStatus(MediaPlaybackStatus::Paused);
+#ifdef DART_VM
+            Dart_CObject player_id_object;
+            player_id_object.type = Dart_CObject_kInt32;
+            player_id_object.value.as_int32 = 0;
+            Dart_CObject type_object;
+            type_object.type = Dart_CObject_kString;
+            type_object.value.as_string = "NativeControls";
+            Dart_CObject native_controls_object;
+            native_controls_object.type = Dart_CObject_kInt32;
+            native_controls_object.value.as_int32 =
+                static_cast<int>(args.Button());
+            Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                             &native_controls_object};
+            Dart_CObject return_object;
+            return_object.type = Dart_CObject_kArray;
+            return_object.value.as_array.length = 3;
+            return_object.value.as_array.values = value_objects;
+            g_dart_post_C_object(g_callback_port, &return_object);
+#else
             (*callback)(static_cast<int>(args.Button()));
+#endif
           });
 }
 
@@ -610,6 +1024,7 @@ LRESULT CALLBACK VideoWindowProc(HWND window, UINT code, WPARAM wparam,
     case WM_SIZE: {
       RECT rect = {0, 0, 0, 0};
       GetClientRect(window, &rect);
+      // Accessing saved XAML handle as user data on parent HWND.
       MoveWindow(
           reinterpret_cast<HWND>(GetWindowLongPtr(window, GWLP_USERDATA)), 0, 0,
           rect.right, rect.bottom, TRUE);
