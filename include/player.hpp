@@ -14,7 +14,8 @@ namespace lwm {
 class Player;
 
 class PlayerEvents {
-  // TODO (alexmercerind): Make event handling multiple instance friendly.
+  // TODO (alexmercerind): Make event handling multiple instance friendly & make
+  // improvements to this class in specific.
  public:
   PlayerEvents(){};
 
@@ -138,8 +139,13 @@ class Player {
   void Open(std::vector<Media> medias) {
     std::vector<const wchar_t*> uris;
     uris.reserve(medias.size());
-    for (auto& media : medias) uris.emplace_back(media.uri().c_str());
-    Internal::PlayerOpen(id_, uris.size(), uris.data());
+    std::vector<int32_t> ids;
+    ids.reserve(medias.size());
+    for (auto& media : medias) {
+      uris.emplace_back(media.uri().c_str());
+      ids.emplace_back(media.id());
+    }
+    Internal::PlayerOpen(id_, uris.size(), uris.data(), ids.data());
   }
 
   void Play() { Internal::PlayerPlay(id_); }
@@ -151,6 +157,12 @@ class Player {
   void Back() { Internal::PlayerBack(id_); }
 
   void Jump(int32_t index) { Internal::PlayerJump(id_, index); }
+
+  void Add(Media media) {
+    Internal::PlayerAdd(id_, media.uri().c_str(), media.id());
+  }
+
+  void Remove(int32_t index) { Internal::PlayerRemove(id_, index); }
 
   void ShowWindow(std::wstring window_title = VIDEO_WINDOW_CLASS) {
     Internal::PlayerShowWindow(id_, window_title.c_str());
