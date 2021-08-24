@@ -20,7 +20,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 #define UNICODE
 #define _UNICODE
 #include <iostream>
@@ -73,12 +72,13 @@ using namespace winrt::Windows::Graphics::Imaging;
 using namespace winrt::Windows::Graphics::DirectX::Direct3D11;
 
 static std::unordered_map<int32_t, Playback::MediaPlayer> g_media_players;
+static std::unordered_map<int32_t, Playback::MediaPlaybackList>
+    g_media_playback_lists;
+static std::unordered_map<int32_t, std::vector<int32_t>> g_media_ids_lists;
 static std::unordered_map<int32_t, std::unique_ptr<std::thread>>
     g_media_players_window_threads;
 static std::unordered_map<int32_t, HWND> g_media_players_window_handles;
 static std::unordered_map<int32_t, HWND> g_media_players_xaml_handles;
-static std::unordered_map<int32_t, Playback::MediaPlaybackList>
-    g_media_playback_lists;
 static std::unordered_map<int32_t, Core::MediaSource> g_medias;
 static bool g_smtc_exist;
 
@@ -170,6 +170,7 @@ DLLEXPORT void PlayerShowWindow(int32_t player_id,
 DLLEXPORT void PlayerCloseWindow(int32_t player_id) {
   if (g_media_players_window_handles.find(player_id) !=
       g_media_players_window_handles.end()) {
+    // ::DestroyWindow will not work since window exists on another thread.
     ::SendMessage(g_media_players_window_handles.at(player_id), WM_CLOSE, NULL,
                   NULL);
     g_media_players_window_handles.erase(player_id);
@@ -190,6 +191,7 @@ DLLEXPORT void PlayerCreate(int32_t player_id, bool show_window = false,
   g_media_players.insert(std::make_pair(player_id, Playback::MediaPlayer()));
   g_media_playback_lists.insert(
       std::make_pair(player_id, Playback::MediaPlaybackList()));
+  g_media_ids_lists.insert(std::make_pair(player_id, std::vector<int>{}));
   g_media_players.at(player_id).SystemMediaTransportControls().IsEnabled(false);
   if (show_window) PlayerShowWindow(player_id, window_title);
 }
@@ -197,36 +199,42 @@ DLLEXPORT void PlayerCreate(int32_t player_id, bool show_window = false,
 DLLEXPORT void PlayerDispose(int32_t player_id) {
   g_media_players.at(player_id).Close();
   PlayerCloseWindow(player_id);
-  g_media_players.erase(player_id);
+  if (g_media_playback_lists.find(player_id) != g_media_playback_lists.end()) {
+    g_media_playback_lists.erase(player_id);
+  }
+  if (g_media_ids_lists.find(player_id) != g_media_ids_lists.end()) {
+    g_media_ids_lists.erase(player_id);
+  }
+  if (g_media_players.find(player_id) != g_media_players.end()) {
+    g_media_players.erase(player_id);
+  }
 }
 
-DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size,
-                          const wchar_t** uris) {
+DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const wchar_t** uris,
+                          const int32_t* ids) {
   g_media_players.at(player_id).Pause();
   g_media_playback_lists.at(player_id).Items().Clear();
+  g_media_ids_lists.at(player_id).clear();
   for (int32_t index = 0; index < size; index++) {
     g_media_playback_lists.at(player_id).Items().Append(
         Core::MediaSource::CreateFromUri(Uri(uris[index])));
+    g_media_ids_lists.at(player_id).emplace_back(ids[index]);
   }
   g_media_players.at(player_id).Source(g_media_playback_lists.at(player_id));
 #ifdef DART_VM
-  auto value_objects = std::unique_ptr<Dart_CObject[]>(
-      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size() +
-                       2]);
-  auto value_object_refs = std::unique_ptr<Dart_CObject* []>(
-      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size() +
-                        2]);
-  Dart_CObject* player_id_object = &value_objects[0];
-  player_id_object->type = Dart_CObject_kInt32;
-  player_id_object->value.as_int32 = player_id;
-  value_object_refs[0] = player_id_object;
-  Dart_CObject* type_object = &value_objects[1];
-  type_object->type = Dart_CObject_kString;
-  type_object->value.as_string = "Open";
-  value_object_refs[1] = type_object;
+  Dart_CObject player_id_object;
+  player_id_object.type = Dart_CObject_kInt32;
+  player_id_object.value.as_int32 = player_id;
+  Dart_CObject type_object;
+  type_object.type = Dart_CObject_kString;
+  type_object.value.as_string = "Open";
+  auto uri_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size()]);
+  auto uri_object_refs = std::unique_ptr<Dart_CObject* []>(
+      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size()]);
   for (int32_t i = 0; i < g_media_playback_lists.at(player_id).Items().Size();
        i++) {
-    Dart_CObject* value_object = &value_objects[i + 2];
+    Dart_CObject* value_object = &uri_objects[i];
     value_object->type = Dart_CObject_kString;
     value_object->value.as_string =
         const_cast<char*>(TO_STRING(g_media_playback_lists.at(player_id)
@@ -236,13 +244,33 @@ DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size,
                                         .Uri()
                                         .ToString())
                               .c_str());
-    value_object_refs[i + 2] = value_object;
+    uri_object_refs[i] = value_object;
   }
+  Dart_CObject uris_object;
+  uris_object.type = Dart_CObject_kArray;
+  uris_object.value.as_array.length =
+      g_media_playback_lists.at(player_id).Items().Size();
+  uris_object.value.as_array.values = uri_object_refs.get();
+  auto id_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size()]);
+  auto id_object_refs = std::unique_ptr<Dart_CObject* []>(
+      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size()]);
+  for (int32_t i = 0; i < g_media_ids_lists.at(player_id).size(); i++) {
+    Dart_CObject* value_object = &id_objects[i];
+    value_object->type = Dart_CObject_kInt32;
+    value_object->value.as_int32 = g_media_ids_lists.at(player_id)[i];
+    id_object_refs[i] = value_object;
+  }
+  Dart_CObject ids_object;
+  ids_object.type = Dart_CObject_kArray;
+  ids_object.value.as_array.length = g_media_ids_lists.at(player_id).size();
+  ids_object.value.as_array.values = id_object_refs.get();
+  Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                   &uris_object, &ids_object};
   Dart_CObject return_object;
   return_object.type = Dart_CObject_kArray;
-  return_object.value.as_array.length =
-      g_media_playback_lists.at(player_id).Items().Size() + 2;
-  return_object.value.as_array.values = value_object_refs.get();
+  return_object.value.as_array.length = 3;
+  return_object.value.as_array.values = value_objects;
   g_dart_post_C_object(g_callback_port, &return_object);
 #endif
 }
@@ -255,27 +283,24 @@ DLLEXPORT void PlayerPause(int32_t player_id) {
   g_media_players.at(player_id).Pause();
 }
 
-DLLEXPORT void PlayerAdd(int32_t player_id, const wchar_t* uri) {
+DLLEXPORT void PlayerAdd(int32_t player_id, const wchar_t* uri, int32_t id) {
   g_media_playback_lists.at(player_id).Items().Append(
       Core::MediaSource::CreateFromUri(Uri(uri)));
+  g_media_ids_lists.at(player_id).emplace_back(id);
 #ifdef DART_VM
-  auto value_objects = std::unique_ptr<Dart_CObject[]>(
-      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size() +
-                       2]);
-  auto value_object_refs = std::unique_ptr<Dart_CObject* []>(
-      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size() +
-                        2]);
-  Dart_CObject* player_id_object = &value_objects[0];
-  player_id_object->type = Dart_CObject_kInt32;
-  player_id_object->value.as_int32 = player_id;
-  value_object_refs[0] = player_id_object;
-  Dart_CObject* type_object = &value_objects[1];
-  type_object->type = Dart_CObject_kString;
-  type_object->value.as_string = "Open";
-  value_object_refs[1] = type_object;
+  Dart_CObject player_id_object;
+  player_id_object.type = Dart_CObject_kInt32;
+  player_id_object.value.as_int32 = player_id;
+  Dart_CObject type_object;
+  type_object.type = Dart_CObject_kString;
+  type_object.value.as_string = "Open";
+  auto uri_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size()]);
+  auto uri_object_refs = std::unique_ptr<Dart_CObject* []>(
+      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size()]);
   for (int32_t i = 0; i < g_media_playback_lists.at(player_id).Items().Size();
        i++) {
-    Dart_CObject* value_object = &value_objects[i + 2];
+    Dart_CObject* value_object = &uri_objects[i];
     value_object->type = Dart_CObject_kString;
     value_object->value.as_string =
         const_cast<char*>(TO_STRING(g_media_playback_lists.at(player_id)
@@ -285,37 +310,55 @@ DLLEXPORT void PlayerAdd(int32_t player_id, const wchar_t* uri) {
                                         .Uri()
                                         .ToString())
                               .c_str());
-    value_object_refs[i + 2] = value_object;
+    uri_object_refs[i] = value_object;
   }
+  Dart_CObject uris_object;
+  uris_object.type = Dart_CObject_kArray;
+  uris_object.value.as_array.length =
+      g_media_playback_lists.at(player_id).Items().Size();
+  uris_object.value.as_array.values = uri_object_refs.get();
+  auto id_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size()]);
+  auto id_object_refs = std::unique_ptr<Dart_CObject* []>(
+      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size()]);
+  for (int32_t i = 0; i < g_media_ids_lists.at(player_id).size(); i++) {
+    Dart_CObject* value_object = &id_objects[i];
+    value_object->type = Dart_CObject_kInt32;
+    value_object->value.as_int32 = g_media_ids_lists.at(player_id)[i];
+    id_object_refs[i] = value_object;
+  }
+  Dart_CObject ids_object;
+  ids_object.type = Dart_CObject_kArray;
+  ids_object.value.as_array.length = g_media_ids_lists.at(player_id).size();
+  ids_object.value.as_array.values = id_object_refs.get();
+  Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                   &uris_object, &ids_object};
   Dart_CObject return_object;
   return_object.type = Dart_CObject_kArray;
-  return_object.value.as_array.length =
-      g_media_playback_lists.at(player_id).Items().Size() + 2;
-  return_object.value.as_array.values = value_object_refs.get();
+  return_object.value.as_array.length = 3;
+  return_object.value.as_array.values = value_objects;
   g_dart_post_C_object(g_callback_port, &return_object);
 #endif
 }
 
 DLLEXPORT void PlayerRemove(int32_t player_id, int32_t index) {
   g_media_playback_lists.at(player_id).Items().RemoveAt(index);
+  g_media_ids_lists.at(player_id)
+      .erase(g_media_ids_lists.at(player_id).begin() + index);
 #ifdef DART_VM
-  auto value_objects = std::unique_ptr<Dart_CObject[]>(
-      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size() +
-                       2]);
-  auto value_object_refs = std::unique_ptr<Dart_CObject* []>(
-      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size() +
-                        2]);
-  Dart_CObject* player_id_object = &value_objects[0];
-  player_id_object->type = Dart_CObject_kInt32;
-  player_id_object->value.as_int32 = player_id;
-  value_object_refs[0] = player_id_object;
-  Dart_CObject* type_object = &value_objects[1];
-  type_object->type = Dart_CObject_kString;
-  type_object->value.as_string = "Open";
-  value_object_refs[1] = type_object;
+  Dart_CObject player_id_object;
+  player_id_object.type = Dart_CObject_kInt32;
+  player_id_object.value.as_int32 = player_id;
+  Dart_CObject type_object;
+  type_object.type = Dart_CObject_kString;
+  type_object.value.as_string = "Open";
+  auto uri_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size()]);
+  auto uri_object_refs = std::unique_ptr<Dart_CObject* []>(
+      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size()]);
   for (int32_t i = 0; i < g_media_playback_lists.at(player_id).Items().Size();
        i++) {
-    Dart_CObject* value_object = &value_objects[i + 2];
+    Dart_CObject* value_object = &uri_objects[i];
     value_object->type = Dart_CObject_kString;
     value_object->value.as_string =
         const_cast<char*>(TO_STRING(g_media_playback_lists.at(player_id)
@@ -325,13 +368,33 @@ DLLEXPORT void PlayerRemove(int32_t player_id, int32_t index) {
                                         .Uri()
                                         .ToString())
                               .c_str());
-    value_object_refs[i + 2] = value_object;
+    uri_object_refs[i] = value_object;
   }
+  Dart_CObject uris_object;
+  uris_object.type = Dart_CObject_kArray;
+  uris_object.value.as_array.length =
+      g_media_playback_lists.at(player_id).Items().Size();
+  uris_object.value.as_array.values = uri_object_refs.get();
+  auto id_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size()]);
+  auto id_object_refs = std::unique_ptr<Dart_CObject* []>(
+      new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size()]);
+  for (int32_t i = 0; i < g_media_ids_lists.at(player_id).size(); i++) {
+    Dart_CObject* value_object = &id_objects[i];
+    value_object->type = Dart_CObject_kInt32;
+    value_object->value.as_int32 = g_media_ids_lists.at(player_id)[i];
+    id_object_refs[i] = value_object;
+  }
+  Dart_CObject ids_object;
+  ids_object.type = Dart_CObject_kArray;
+  ids_object.value.as_array.length = g_media_ids_lists.at(player_id).size();
+  ids_object.value.as_array.values = id_object_refs.get();
+  Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                   &uris_object, &ids_object};
   Dart_CObject return_object;
   return_object.type = Dart_CObject_kArray;
-  return_object.value.as_array.length =
-      g_media_playback_lists.at(player_id).Items().Size() + 2;
-  return_object.value.as_array.values = value_object_refs.get();
+  return_object.value.as_array.length = 3;
+  return_object.value.as_array.values = value_objects;
   g_dart_post_C_object(g_callback_port, &return_object);
 #endif
 }
