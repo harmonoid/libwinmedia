@@ -1,5 +1,3 @@
-/* TODO: Update `Player` class with event handlers. */
-
 #include <functional>
 
 #include "Internal.hpp"
@@ -16,6 +14,7 @@ namespace lwm {
 class Player;
 
 class PlayerEvents {
+  // TODO (alexmercerind): Make event handling multiple instance friendly.
  public:
   PlayerEvents(){};
 
@@ -62,6 +61,11 @@ class PlayerEvents {
   void Duration(std::function<void(int32_t)> listener) {
     PlayerEvents::duration_ = listener;
     Internal::PlayerSetDurationEventHandler(id_, &PlayerEvents::OnDuration);
+  }
+
+  void Index(std::function<void(int32_t)> listener) {
+    PlayerEvents::index_ = listener;
+    Internal::PlayerSetIndexEventHandler(id_, &PlayerEvents::OnIndex);
   }
 
  private:
@@ -113,6 +117,10 @@ class PlayerEvents {
     PlayerEvents::duration_(value);
   }
 
+  static inline std::function<void(int32_t)> index_;
+
+  static inline void OnIndex(int32_t value) { PlayerEvents::index_(value); }
+
   friend class Player;
 };
 
@@ -127,12 +135,10 @@ class Player {
 
   PlayerEvents* events() const { return events_.get(); }
 
-  void Open(std::vector<std::shared_ptr<Media>> medias) {
+  void Open(std::vector<Media> medias) {
     std::vector<const wchar_t*> uris;
     uris.reserve(medias.size());
-    for (const auto& media : medias) {
-      uris.emplace_back(media->uri().c_str());
-    }
+    for (auto& media : medias) uris.emplace_back(media.uri().c_str());
     Internal::PlayerOpen(id_, uris.size(), uris.data());
   }
 
