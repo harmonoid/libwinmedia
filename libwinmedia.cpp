@@ -217,7 +217,8 @@ DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const wchar_t** uris,
   g_media_ids_lists.at(player_id).clear();
   for (int32_t index = 0; index < size; index++) {
     g_media_playback_lists.at(player_id).Items().Append(
-        Core::MediaSource::CreateFromUri(Uri(uris[index])));
+        Playback::MediaPlaybackItem(
+            Core::MediaSource::CreateFromUri(Uri(uris[index]))));
     g_media_ids_lists.at(player_id).emplace_back(ids[index]);
   }
   g_media_players.at(player_id).Source(g_media_playback_lists.at(player_id));
@@ -285,7 +286,7 @@ DLLEXPORT void PlayerPause(int32_t player_id) {
 
 DLLEXPORT void PlayerAdd(int32_t player_id, const wchar_t* uri, int32_t id) {
   g_media_playback_lists.at(player_id).Items().Append(
-      Core::MediaSource::CreateFromUri(Uri(uri)));
+      Playback::MediaPlaybackItem(Core::MediaSource::CreateFromUri(Uri(uri))));
   g_media_ids_lists.at(player_id).emplace_back(id);
 #ifdef DART_VM
   Dart_CObject player_id_object;
