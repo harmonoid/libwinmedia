@@ -16,5 +16,12 @@ jobs:
       - run: cmake --build . --config Release
       - uses: actions/upload-artifact@v1
         with:
-          name: libwinmedia
+          name: libwinmedia-core
+          path: Release
+      - run: del CMakeCache.txt
+      - run: cmake -DDART_VM=Enable .
+      - run: cmake --build . --config Release
+      - uses: actions/upload-artifact@v1
+        with:
+          name: libwinmedia-dart-vm
           path: Release
