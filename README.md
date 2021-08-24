@@ -12,25 +12,27 @@ A very simple example can be as follows.
 #include "libwinmedia/libwinmedia.hpp"
 
 auto TO_WIDESTRING = [](const char* array) -> std::wstring {
-  std::string string = std::string(array);
+  std::string string(array);
   return std::wstring(string.begin(), string.end());
 };
 
 int main(int ac, const char** av) {
+  using namespace std;
+  using namespace lwm;
   if (ac < 2) {
-    std::wcout << L"No URI provided.\n" << L"Example Usage:\n" << av[0]
-               << L" file://C:/alexmercerind/music.mp3\n" << av[0]
-               << L" https://alexmercerind.github.io/video.mp4\n";
+    wcout << L"No URI provided.\n" << L"Example Usage:\n" << av[0]
+          << L" file://C:/alexmercerind/music.mp3\n" << av[0]
+          << L" https://alexmercerind.github.io/video.mp4\n";
     return EXIT_FAILURE;
   }
-  auto player = lwm::Player(0);
-  auto media = std::make_shared<lwm::Media>(0, TO_WIDESTRING(av[1]));
-  player.Open(media);
+  auto player = Player(0);
+  auto media = Media(TO_WIDESTRING(av[1]));
+  player.Open(vector<Media>{media});
   player.Play();
   player.events()->Position([](int position) -> void {
-    std::wcout << "Position changed to " << position << " milliseconds.\n";
+    wcout << L"Current playback position is " << position << L" ms.\n";
   });
-  std::cin.get();
+  cin.get();
   return EXIT_SUCCESS;
 }
 
@@ -47,14 +49,14 @@ Player player = Player(0);
 **Create a media to open inside player.**
 
 ```cpp
-Media media = Media(0, true);
+Media media = Media("file://C:/alexmercerind/music.mp3");
 int32_t duration = media.duration();
 ```
 
-**Play the media.**
+**Play the medias.**
 
 ```cpp
-player.Open(media);
+player.Open(std::vector<lwm::Media>{media});
 ```
 
 **Control playback.**
@@ -166,6 +168,14 @@ For showing video, you must instantiate player as follows.
 
 ```cpp
 Player player = Player(0, true);
+```
+
+**Control video output**
+
+```cpp
+player.ShowWindow();
+
+player.CloseWindow();
 ```
 
 You need to embed a manifest with `maxversiontested` property to the generated executable. The library creates a separate win32 window on another thread & uses XAML islands to render the `MediaPlayerElement` in it (for showing video). Learn more [here](https://docs.microsoft.com/en-us/windows/apps/desktop/modernize/host-standard-control-with-xaml-islands-cpp) & [here](https://docs.microsoft.com/en-us/cpp/build/how-to-embed-a-manifest-inside-a-c-cpp-application?view=msvc-160).
