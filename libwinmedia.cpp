@@ -233,18 +233,22 @@ DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const wchar_t** uris,
       new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size()]);
   auto uri_object_refs = std::unique_ptr<Dart_CObject* []>(
       new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size()]);
+  std::vector<std::string> uris_str(
+      g_media_playback_lists.at(player_id).Items().Size());
+  std::vector<char*> uris_ptr(
+      g_media_playback_lists.at(player_id).Items().Size());
   for (int32_t i = 0; i < g_media_playback_lists.at(player_id).Items().Size();
        i++) {
+    uris_str[i] = TO_STRING(g_media_playback_lists.at(player_id)
+                                .Items()
+                                .GetAt(i)
+                                .Source()
+                                .Uri()
+                                .ToString());
+    uris_ptr[i] = uris_str[i].data();
     Dart_CObject* value_object = &uri_objects[i];
     value_object->type = Dart_CObject_kString;
-    value_object->value.as_string =
-        const_cast<char*>(TO_STRING(g_media_playback_lists.at(player_id)
-                                        .Items()
-                                        .GetAt(i)
-                                        .Source()
-                                        .Uri()
-                                        .ToString())
-                              .c_str());
+    value_object->value.as_string = uris_ptr[i];
     uri_object_refs[i] = value_object;
   }
   Dart_CObject uris_object;
@@ -270,7 +274,7 @@ DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const wchar_t** uris,
                                    &uris_object, &ids_object};
   Dart_CObject return_object;
   return_object.type = Dart_CObject_kArray;
-  return_object.value.as_array.length = 3;
+  return_object.value.as_array.length = 4;
   return_object.value.as_array.values = value_objects;
   g_dart_post_C_object(g_callback_port, &return_object);
 #endif
@@ -299,18 +303,22 @@ DLLEXPORT void PlayerAdd(int32_t player_id, const wchar_t* uri, int32_t id) {
       new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size()]);
   auto uri_object_refs = std::unique_ptr<Dart_CObject* []>(
       new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size()]);
+  std::vector<std::string> uris_str(
+      g_media_playback_lists.at(player_id).Items().Size());
+  std::vector<char*> uris_ptr(
+      g_media_playback_lists.at(player_id).Items().Size());
   for (int32_t i = 0; i < g_media_playback_lists.at(player_id).Items().Size();
        i++) {
+    uris_str[i] = TO_STRING(g_media_playback_lists.at(player_id)
+                                .Items()
+                                .GetAt(i)
+                                .Source()
+                                .Uri()
+                                .ToString());
+    uris_ptr[i] = uris_str[i].data();
     Dart_CObject* value_object = &uri_objects[i];
     value_object->type = Dart_CObject_kString;
-    value_object->value.as_string =
-        const_cast<char*>(TO_STRING(g_media_playback_lists.at(player_id)
-                                        .Items()
-                                        .GetAt(i)
-                                        .Source()
-                                        .Uri()
-                                        .ToString())
-                              .c_str());
+    value_object->value.as_string = uris_ptr[i];
     uri_object_refs[i] = value_object;
   }
   Dart_CObject uris_object;
@@ -336,7 +344,7 @@ DLLEXPORT void PlayerAdd(int32_t player_id, const wchar_t* uri, int32_t id) {
                                    &uris_object, &ids_object};
   Dart_CObject return_object;
   return_object.type = Dart_CObject_kArray;
-  return_object.value.as_array.length = 3;
+  return_object.value.as_array.length = 4;
   return_object.value.as_array.values = value_objects;
   g_dart_post_C_object(g_callback_port, &return_object);
 #endif
@@ -357,18 +365,22 @@ DLLEXPORT void PlayerRemove(int32_t player_id, int32_t index) {
       new Dart_CObject[g_media_playback_lists.at(player_id).Items().Size()]);
   auto uri_object_refs = std::unique_ptr<Dart_CObject* []>(
       new Dart_CObject*[g_media_playback_lists.at(player_id).Items().Size()]);
+  std::vector<std::string> uris_str(
+      g_media_playback_lists.at(player_id).Items().Size());
+  std::vector<char*> uris_ptr(
+      g_media_playback_lists.at(player_id).Items().Size());
   for (int32_t i = 0; i < g_media_playback_lists.at(player_id).Items().Size();
        i++) {
+    uris_str[i] = TO_STRING(g_media_playback_lists.at(player_id)
+                                .Items()
+                                .GetAt(i)
+                                .Source()
+                                .Uri()
+                                .ToString());
+    uris_ptr[i] = uris_str[i].data();
     Dart_CObject* value_object = &uri_objects[i];
     value_object->type = Dart_CObject_kString;
-    value_object->value.as_string =
-        const_cast<char*>(TO_STRING(g_media_playback_lists.at(player_id)
-                                        .Items()
-                                        .GetAt(i)
-                                        .Source()
-                                        .Uri()
-                                        .ToString())
-                              .c_str());
+    value_object->value.as_string = uris_ptr[i];
     uri_object_refs[i] = value_object;
   }
   Dart_CObject uris_object;
@@ -394,7 +406,7 @@ DLLEXPORT void PlayerRemove(int32_t player_id, int32_t index) {
                                    &uris_object, &ids_object};
   Dart_CObject return_object;
   return_object.type = Dart_CObject_kArray;
-  return_object.value.as_array.length = 3;
+  return_object.value.as_array.length = 4;
   return_object.value.as_array.values = value_objects;
   g_dart_post_C_object(g_callback_port, &return_object);
 #endif
