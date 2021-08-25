@@ -32,6 +32,7 @@ if (WIN32)
 
   add_library(${PROJECT_NAME} SHARED
     ${PROJECT_NAME}.cpp
+    ${PROJECT_NAME}.rc
   )
 
   set_target_properties(${PROJECT_NAME} PROPERTIES
