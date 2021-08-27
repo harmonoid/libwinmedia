@@ -830,7 +830,7 @@ DLLEXPORT void PlayerNativeControlsUpdate(int32_t player_id, int32_t type,
   SystemMediaTransportControlsDisplayUpdater updater =
       controls.DisplayUpdater();
   updater.Type(static_cast<MediaPlaybackType>(type));
-  if (type == 0) {
+  if (type == 1) {
     MusicDisplayProperties properties = updater.MusicProperties();
     properties.AlbumArtist(data[0]);
     properties.AlbumTitle(data[1]);
@@ -844,7 +844,7 @@ DLLEXPORT void PlayerNativeControlsUpdate(int32_t player_id, int32_t type,
       properties.TrackNumber(std::stoi(data[5]));
     } catch (...) {
     }
-  } else if (type == 1) {
+  } else if (type == 2) {
     VideoDisplayProperties properties = updater.VideoProperties();
     properties.Title(data[0]);
     properties.Subtitle(data[1]);
