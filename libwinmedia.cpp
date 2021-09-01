@@ -449,6 +449,10 @@ DLLEXPORT void PlayerSetIsLooping(int32_t player_id, bool looping) {
   g_media_players.at(player_id).IsLoopingEnabled(looping);
 }
 
+DLLEXPORT void PlayerSetIsShuffling(int32_t player_id, bool shuffling) {
+  g_media_playback_lists.at(player_id).ShuffleEnabled(shuffling);
+}
+
 DLLEXPORT int32_t PlayerGetPosition(int32_t player_id) {
   return TO_MILLISECONDS(g_media_players.at(player_id).Position());
 }
