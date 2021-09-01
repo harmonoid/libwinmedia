@@ -850,8 +850,8 @@ DLLEXPORT void PlayerNativeControlsUpdate(int32_t player_id, int32_t type,
     properties.Subtitle(data[1]);
   }
   if (std::wstring(thumbnail) != L"") {
-    updater.Thumbnail(Streams::RandomAccessStreamReference::CreateFromFile(
-        StorageFile::GetFileFromPathAsync(thumbnail).get()));
+    updater.Thumbnail(
+        Streams::RandomAccessStreamReference::CreateFromUri(Uri(thumbnail)));
   }
   updater.Update();
 }
@@ -1097,8 +1097,7 @@ DLLEXPORT void NativeControlsUpdate(int32_t type, wchar_t** data,
     properties.Subtitle(data[1]);
   }
   if (std::wstring(thumbnail) != L"") {
-    updater.Thumbnail(Streams::RandomAccessStreamReference::CreateFromFile(
-        StorageFile::GetFileFromPathAsync(thumbnail).get()));
+    updater.Thumbnail(Streams::RandomAccessStreamReference::CreateFromUri(Uri(thumbnail)));
   }
   updater.Update();
 }
