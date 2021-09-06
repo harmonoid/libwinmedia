@@ -1,3 +1,6 @@
 [submodule "external/dart_api"]
 	path = external/dart_api
 	url = https://github.com/alexmercerind/dart_api.git
+[submodule "external/webview"]
+	path = external/webview
+	url = https://github.com/webview/webview.git
