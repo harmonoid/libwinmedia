@@ -2,6 +2,7 @@
 #include <cwchar>
 #include <filesystem>
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -33,25 +34,43 @@ class Player {
   std::unique_ptr<std::thread> thread_ = nullptr;
   std::unique_ptr<webview::webview> webview_ =
       std::make_unique<webview::webview>(true, nullptr);
+  std::unique_ptr<std::promise<void>> promise_ =
+      std::make_unique<std::promise<void>>();
+  bool initialized_ = false;
+
+  inline void LockGuard() {
+    if (!initialized_) {
+      promise_->get_future().wait();
+      initialized_ = true;
+    }
+  }
 
   static constexpr auto kPlayerSource =
       "<!DOCTYPE html>"
       "<html>"
-      "<video controls id='player'></video>"
+      "<body>"
+      "   <video id='player'></video>"
+      "</body>"
       "<style>"
       "   * {"
       "       background: #000;"
       "       margin: 0;"
       "       padding: 0;"
+      "       overflow: hidden;"
       "   }"
-      "   video {"
+      "   body {"
       "       height: 100%;"
       "       width: 100%;"
+      "   }"
+      "   video {"
+      "       height: 100vh;"
+      "       width: 100vw;"
       "   }"
       "</style>"
       "<script>"
       "   let player = document.getElementById('player');"
       "   let button = document.createElement('button');"
+      "   window.onload = () => initialized(null);"
       "</script>"
       "</html>";
 };
@@ -67,13 +86,21 @@ Player::Player(int32_t id, bool show_window = false,
   if (!show_window) {
     gtk_widget_hide(GTK_WIDGET(webview_->window()));
   }
+  webview_->bind("initialized", [=](std::string _) -> std::string {
+    promise_->set_value();
+    return "";
+  });
 }
 
 void Player::Open(std::string uri) {
+  LockGuard();
   webview_->eval("player.src = encodeURI('" + uri + "');");
 }
 
-void Player::Play() { webview_->eval("player.play();"); }
+void Player::Play() {
+  LockGuard();
+  webview_->eval("player.play();");
+}
 
 void Player::Run() { webview_->run(); }
 
