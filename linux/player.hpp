@@ -49,7 +49,7 @@ class Player {
       "<!DOCTYPE html>"
       "<html>"
       "<body>"
-      "   <video id='player'></video>"
+      "   <video controls id='player'></video>"
       "</body>"
       "<style>"
       "   * {"
@@ -81,15 +81,16 @@ Player::Player(int32_t id, bool show_window = false,
   std::fstream file(source_, std::ios::out);
   file << Player::kPlayerSource;
   file.close();
-  webview_->navigate("file://" + source_);
-  webview_->set_title(ConvertToString(window_title));
-  if (!show_window) {
-    gtk_widget_hide(GTK_WIDGET(webview_->window()));
-  }
   webview_->bind("initialized", [=](std::string _) -> std::string {
     promise_->set_value();
     return "";
   });
+  webview_->navigate("file://" + source_);
+  webview_->set_title(ConvertToString(window_title));
+  webview_->set_size(480, 360, WEBVIEW_HINT_NONE);
+  if (!show_window) {
+    gtk_widget_hide(GTK_WIDGET(webview_->window()));
+  }
 }
 
 void Player::Open(std::string uri) {
