@@ -50,6 +50,22 @@ class Player {
 
   void SetRate(float rate);
 
+  void SetIsPlayingEventHandler(std::function<void(bool)> is_playing_callback);
+
+  void SetIsBufferingEventHandler(
+      std::function<void(bool)> is_buffering_callback);
+
+  void SetIsCompletedEventHandler(
+      std::function<void(bool)> is_completed_callback);
+
+  void SetPositionEventHandler(std::function<void(int32_t)> position_callback);
+
+  void SetDurationEventHandler(std::function<void(int32_t)> duration_callback);
+
+  void SetVolumeEventHandler(std::function<void(float)> volume_callback);
+
+  void SetRateEventHandler(std::function<void(float)> rate_callback);
+
   void Run();
 
   webview::webview* webview() const { return webview_.get(); }
@@ -67,6 +83,13 @@ class Player {
   int32_t duration_ = 0;
   float volume_ = 0.0;
   float rate_ = 0.0;
+  std::function<void(bool)> is_playing_callback_ = [](bool) {};
+  std::function<void(bool)> is_buffering_callback_ = [](bool) {};
+  std::function<void(bool)> is_completed_callback_ = [](bool) {};
+  std::function<void(int32_t)> position_callback_ = [](int32_t) {};
+  std::function<void(int32_t)> duration_callback_ = [](int32_t) {};
+  std::function<void(float)> volume_callback_ = [](float) {};
+  std::function<void(float)> rate_callback_ = [](float) {};
   std::string source_ =
       std::filesystem::temp_directory_path().string() + "/source.html";
   std::unique_ptr<std::thread> thread_ = nullptr;
@@ -149,30 +172,37 @@ Player::Player(int32_t id, bool show_window = false,
   });
   webview_->bind("isPlaying", [=](std::string event) -> std::string {
     is_playing_ = event.substr(1, event.size() - 2) == "true" ? true : false;
+    is_playing_callback_(is_playing_);
     return "";
   });
   webview_->bind("isBuffering", [=](std::string event) -> std::string {
     is_buffering_ = event.substr(1, event.size() - 2) == "true" ? true : false;
+    is_buffering_callback_(is_buffering_);
     return "";
   });
   webview_->bind("isCompleted", [=](std::string event) -> std::string {
     is_completed_ = event.substr(1, event.size() - 2) == "true" ? true : false;
+    is_completed_callback_(is_completed_);
     return "";
   });
   webview_->bind("position", [=](std::string event) -> std::string {
     position_ = std::stoi(event.substr(1, event.size() - 2));
+    position_callback_(position_);
     return "";
   });
   webview_->bind("duration", [=](std::string event) -> std::string {
     duration_ = std::stoi(event.substr(1, event.size() - 2));
+    duration_callback_(duration_);
     return "";
   });
   webview_->bind("volume", [=](std::string event) -> std::string {
     volume_ = std::stof(event.substr(1, event.size() - 2));
+    volume_callback_(volume_);
     return "";
   });
   webview_->bind("rate", [=](std::string event) -> std::string {
     rate_ = std::stof(event.substr(1, event.size() - 2));
+    rate_callback_(rate_);
     return "";
   });
   webview_->navigate("file://" + source_);
@@ -238,7 +268,7 @@ void Player::Seek(int32_t position) {
   EnsureFuture();
   webview_->eval("player.currentTime = " + std::to_string(position) +
                  " / 1000.0;");
-};
+}
 
 void Player::SetVolume(float volume) {
   EnsureFuture();
@@ -248,6 +278,39 @@ void Player::SetVolume(float volume) {
 void Player::SetRate(float rate) {
   EnsureFuture();
   webview_->eval("player.playbackRate = " + std::to_string(rate) + ";");
+}
+
+void Player::SetIsPlayingEventHandler(
+    std::function<void(bool)> is_playing_callback) {
+  is_playing_callback_ = is_playing_callback;
+}
+
+void Player::SetIsBufferingEventHandler(
+    std::function<void(bool)> is_buffering_callback) {
+  is_buffering_callback_ = is_buffering_callback;
+}
+
+void Player::SetIsCompletedEventHandler(
+    std::function<void(bool)> is_completed_callback) {
+  is_completed_callback_ = is_completed_callback;
+}
+
+void Player::SetPositionEventHandler(
+    std::function<void(int32_t)> position_callback) {
+  position_callback_ = position_callback;
+}
+
+void Player::SetDurationEventHandler(
+    std::function<void(int32_t)> duration_callback) {
+  duration_callback_ = duration_callback;
+}
+
+void Player::SetVolumeEventHandler(std::function<void(float)> volume_callback) {
+  volume_callback_ = volume_callback;
+}
+
+void Player::SetRateEventHandler(std::function<void(float)> rate_callback) {
+  rate_callback_ = rate_callback;
 }
 
 void Player::Run() { webview_->run(); }
