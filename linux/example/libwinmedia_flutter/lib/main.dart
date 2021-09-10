@@ -1,7 +1,48 @@
+import 'dart:isolate';
+
+import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'dart:ffi';
 
+import 'package:libwinmedia/generated/bindings.dart';
+
+var path = '/home/alexmercerind/Documents/libwinmedia/libwinmedia.so';
+var lwm = LWM(DynamicLibrary.open(path));
+var receiver = ReceivePort()
+  ..listen(
+    (message) {
+      print(message);
+    },
+  );
+
+extension NativeTypesString on List<String> {
+  Pointer<Pointer<Utf8>> toNativeUtf8Array() {
+    final list =
+        map((string) => string.toNativeUtf8()).toList().cast<Pointer<Utf8>>();
+    final pointer = calloc.allocate<Pointer<Utf8>>(list.length * 8);
+    for (var index = 0; index < length; index++) {
+      pointer[index] = list[index];
+    }
+    return pointer;
+  }
+}
+
+extension NativeTypesInt on List<int> {
+  Pointer<Int32> toNativeArray() {
+    final pointer = calloc.allocate<Int32>(length * 4);
+    for (var index = 0; index < length; index++) {
+      pointer[index] = this[index];
+    }
+    return pointer;
+  }
+}
+
+void intC(int _) {}
+void doubleC(double _) {}
+
 void main() {
+  lwm.InitializeDartApi(NativeApi.postCObject, receiver.sendPort.nativePort);
+  lwm.PlayerCreate(0, false, ''.toNativeUtf8());
   runApp(MyApp());
 }
 
@@ -55,9 +96,29 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _incrementCounter() {
-    DynamicLibrary.open(
-            '/home/alexmercerind/Documents/libwinmedia/linux/example/main.so')
-        .lookupFunction<Void Function(), void Function()>('StartPlayer')();
+    lwm.PlayerSetRateEventHandler(0, Pointer.fromFunction(doubleC));
+    lwm.PlayerSetVolumeEventHandler(0, Pointer.fromFunction(doubleC));
+    lwm.PlayerSetPositionEventHandler(0, Pointer.fromFunction(intC));
+    lwm.PlayerSetDurationEventHandler(0, Pointer.fromFunction(intC));
+    lwm.PlayerSetIndexEventHandler(0, Pointer.fromFunction(intC));
+    lwm.PlayerSetIsPlayingEventHandler(0, Pointer.fromFunction(intC));
+    lwm.PlayerSetIsBufferingEventHandler(0, Pointer.fromFunction(intC));
+    lwm.PlayerSetIsCompletedEventHandler(0, Pointer.fromFunction(intC));
+    lwm.PlayerSetVolume(0, 0.5);
+    lwm.PlayerSetRate(0, 1.2);
+    lwm.PlayerOpen(
+      0,
+      2,
+      [
+        'https://p.scdn.co/mp3-preview/18f50618e8737c8a1f3b50a653023c5576af8955?cid=774b29d4f13844c495f206cafdad9c86',
+        'https://p.scdn.co/mp3-preview/669eef4c25c47eb54c8c0bceee55b94519f3b0c1?cid=774b29d4f13844c495f206cafdad9c86',
+      ].toNativeUtf8Array(),
+      [
+        0,
+        1,
+      ].toNativeArray(),
+    );
+    lwm.PlayerPlay(0);
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below

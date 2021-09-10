@@ -1,5 +1,4 @@
 #define UNICODE
-#include <cwchar>
 #include <filesystem>
 #include <fstream>
 #include <future>
@@ -9,14 +8,13 @@
 #include <vector>
 
 #include "../external/webview/webview.h"
-#include "utils.hpp"
 
 #ifndef PLAYER_H_
 #define PLAYER_H_
 
 class Player {
  public:
-  Player(int32_t id, bool show_window, std::wstring window_title);
+  Player(int32_t id, bool show_window, std::string window_title);
 
   bool is_playing() const { return is_playing_; }
   bool is_buffering() const { return is_buffering_; }
@@ -27,13 +25,13 @@ class Player {
   float rate() const { return rate_; }
   int32_t index() const { return index_; }
   std::vector<int32_t>& media_ids() { return media_ids_; }
-  std::vector<std::wstring>& media_uris() { return media_uris_; }
+  std::vector<std::string>& media_uris() { return media_uris_; }
 
   void ShowWindow();
 
   void CloseWindow();
 
-  void Open(std::vector<std::wstring> uris, std::vector<int32_t> ids);
+  void Open(std::vector<std::string> uris, std::vector<int32_t> ids);
 
   void Play();
 
@@ -80,7 +78,7 @@ class Player {
   int32_t id_;
   int32_t index_ = 0;
   std::vector<int32_t> media_ids_ = {};
-  std::vector<std::wstring> media_uris_ = {};
+  std::vector<std::string> media_uris_ = {};
   bool is_playing_ = false;
   bool is_buffering_ = false;
   bool is_completed_ = false;
@@ -155,10 +153,10 @@ class Player {
       "       isCompleted(true);"
       "   });"
       "   player.addEventListener('volumechange', (event) => {"
-      "       volume(event.target.volume);"
+      "       volume(Math.round(event.target.volume * 1000) / 1000);"
       "   });"
       "   player.addEventListener('ratechange', (event) => {"
-      "       rate(event.target.rate);"
+      "       rate(Math.round(event.target.playbackRate * 1000) / 1000);"
       "   });"
       "   let button = document.createElement('button');"
       "   window.onload = () => initialized(null);"
@@ -167,7 +165,7 @@ class Player {
 };
 
 Player::Player(int32_t id, bool show_window = false,
-               std::wstring window_title = L"libwinmedia")
+               std::string window_title = "libwinmedia")
     : id_(id) {
   std::fstream file(source_, std::ios::out);
   file << Player::kPlayerSource;
@@ -213,7 +211,7 @@ Player::Player(int32_t id, bool show_window = false,
     return "";
   });
   webview_->navigate("file://" + source_);
-  webview_->set_title(ConvertToString(window_title));
+  webview_->set_title(window_title);
   webview_->set_size(480, 360, WEBVIEW_HINT_NONE);
   if (!show_window) {
     gtk_widget_hide(GTK_WIDGET(webview_->window()));
@@ -230,7 +228,7 @@ void Player::CloseWindow() {
   gtk_widget_hide(GTK_WIDGET(webview_->window()));
 }
 
-void Player::Open(std::vector<std::wstring> uris, std::vector<int32_t> ids) {
+void Player::Open(std::vector<std::string> uris, std::vector<int32_t> ids) {
   EnsureFuture();
   index_ = 0;
   media_ids_ = ids;
