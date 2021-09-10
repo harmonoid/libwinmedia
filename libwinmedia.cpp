@@ -59,7 +59,7 @@ extern "C" {
 #endif
 #ifndef LIBWINMEDIA
 #define LIBWINMEDIA
-#define VIDEO_WINDOW_CLASS L"libwinmedia"
+#define VIDEO_WINDOW_CLASS "libwinmedia"
 #define TAG_SIZE 200
 #define TO_MILLISECONDS(timespan) timespan.count() / 10000
 #define TO_STRING(wide_string) \
@@ -88,6 +88,17 @@ static bool g_smtc_exist;
 
 LRESULT CALLBACK VideoWindowProc(HWND, UINT, WPARAM, LPARAM);
 #elif __linux__
+
+void Dispatch(std::function<void()> f) {
+  g_idle_add_full(G_PRIORITY_HIGH_IDLE, (GSourceFunc)([](void* f) -> int {
+                    (*static_cast<std::function<void()>*>(f))();
+                    return G_SOURCE_REMOVE;
+                  }),
+                  new std::function<void()>(f), [](void* f) {
+                    delete static_cast<std::function<void()>*>(f);
+                  });
+}
+
 static std::unordered_map<int32_t, std::unique_ptr<Player>> g_media_players;
 #endif
 
@@ -107,7 +118,7 @@ DLLEXPORT void InitializeDartApi(Dart_PostCObjectType dart_post_C_object,
 #endif
 
 DLLEXPORT void PlayerShowWindow(int32_t player_id,
-                                wchar_t* window_title = VIDEO_WINDOW_CLASS) {
+                                char* window_title = VIDEO_WINDOW_CLASS) {
 #ifdef _WIN32
   g_media_players_window_threads[player_id] =
       std::make_unique<std::thread>([=]() -> void {
@@ -202,7 +213,7 @@ DLLEXPORT void PlayerCloseWindow(int32_t player_id) {
 }
 
 DLLEXPORT void PlayerCreate(int32_t player_id, bool show_window = false,
-                            wchar_t* window_title = VIDEO_WINDOW_CLASS) {
+                            char* window_title = VIDEO_WINDOW_CLASS) {
 #ifdef _WIN32
   g_media_players.insert(std::make_pair(player_id, Playback::MediaPlayer()));
   g_media_playback_lists.insert(
@@ -211,9 +222,13 @@ DLLEXPORT void PlayerCreate(int32_t player_id, bool show_window = false,
   g_media_players.at(player_id).SystemMediaTransportControls().IsEnabled(false);
   if (show_window) PlayerShowWindow(player_id, window_title);
 #elif __linux__
-  g_media_players.insert(std::make_pair(
-      player_id,
-      std::make_unique<Player>(player_id, show_window, window_title)));
+  Dispatch([=]() -> void {
+    g_media_players.insert(std::make_pair(
+        player_id,
+        std::make_unique<Player>(player_id, show_window, window_title)));
+  });
+  // TODO (alexmercerind): This is not safe, ensure callback invoke before any
+  // other Player API calls.
 #endif
 }
 
@@ -235,7 +250,7 @@ DLLEXPORT void PlayerDispose(int32_t player_id) {
 #endif
 }
 
-DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const wchar_t** uris,
+DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const char** uris,
                           const int32_t* ids) {
 #ifdef _WIN32
   g_media_players.at(player_id).Pause();
@@ -305,12 +320,12 @@ DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const wchar_t** uris,
   g_dart_post_C_object(g_callback_port, &return_object);
 #endif
 #elif __linux__
-  std::vector<std::wstring> uris_vector;
+  std::vector<std::string> uris_vector;
   uris_vector.reserve(size);
   std::vector<int32_t> ids_vector;
   ids_vector.reserve(size);
   for (int i = 0; i < size; i++) {
-    uris_vector.emplace_back(std::wstring(uris[i]));
+    uris_vector.emplace_back(uris[i]);
     ids_vector.emplace_back(ids[i]);
   }
   g_media_players.at(player_id)->Pause();
@@ -388,7 +403,7 @@ DLLEXPORT void PlayerPause(int32_t player_id) {
 #endif
 }
 
-DLLEXPORT void PlayerAdd(int32_t player_id, const wchar_t* uri, int32_t id) {
+DLLEXPORT void PlayerAdd(int32_t player_id, const char* uri, int32_t id) {
 #ifdef _WIN32
   g_media_playback_lists.at(player_id).Items().Append(
       Playback::MediaPlaybackItem(Core::MediaSource::CreateFromUri(Uri(uri))));
@@ -1214,8 +1229,7 @@ DLLEXPORT void PlayerNativeControlsSetStatus(int32_t player_id,
 }
 
 DLLEXPORT void PlayerNativeControlsUpdate(int32_t player_id, int32_t type,
-                                          wchar_t** data,
-                                          const wchar_t* thumbnail) {
+                                          char** data, const char* thumbnail) {
   SystemMediaTransportControls controls =
       g_media_players.at(player_id).SystemMediaTransportControls();
   SystemMediaTransportControlsDisplayUpdater updater =
@@ -1259,7 +1273,7 @@ DLLEXPORT void PlayerNativeControlsDispose(int32_t player_id) {
 
 /* Media */
 
-DLLEXPORT void MediaCreate(int32_t media_id, const wchar_t* uri,
+DLLEXPORT void MediaCreate(int32_t media_id, const char* uri,
                            bool parse = false) {
   g_medias.insert(
       std::make_pair(media_id, Core::MediaSource::CreateFromUri(Uri(uri))));
@@ -1277,15 +1291,14 @@ DLLEXPORT int32_t MediaGetDuration(int32_t media_id) {
 
 /* Tags */
 
-DLLEXPORT wchar_t** TagsFromMusic(const wchar_t* uri) {
+DLLEXPORT char** TagsFromMusic(const char* uri) {
   FileProperties::StorageItemContentProperties properties =
       StorageFile::GetFileFromPathAsync(uri).get().Properties();
   FileProperties::MusicProperties music =
       properties.GetMusicPropertiesAsync().get();
   std::wstring string = L"";
-  wchar_t** tags = new wchar_t*[15];
-  for (int32_t index = 0; index < 15; index++)
-    tags[index] = new wchar_t[TAG_SIZE];
+  char** tags = new char*[15];
+  for (int32_t index = 0; index < 15; index++) tags[index] = new char[TAG_SIZE];
   wcscpy_s(tags[0], TAG_SIZE, music.Album().c_str());
   wcscpy_s(tags[1], TAG_SIZE, music.AlbumArtist().c_str());
   wcscpy_s(tags[2], TAG_SIZE, std::to_wstring(music.Bitrate()).c_str());
@@ -1335,15 +1348,14 @@ DLLEXPORT wchar_t** TagsFromMusic(const wchar_t* uri) {
   return tags;
 }
 
-DLLEXPORT wchar_t** TagsFromVideo(const wchar_t* uri) {
+DLLEXPORT char** TagsFromVideo(const char* uri) {
   FileProperties::StorageItemContentProperties properties =
       StorageFile::GetFileFromPathAsync(uri).get().Properties();
   FileProperties::VideoProperties video =
       properties.GetVideoPropertiesAsync().get();
   std::wstring string = L"";
-  wchar_t** tags = new wchar_t*[16];
-  for (int32_t index = 0; index < 16; index++)
-    tags[index] = new wchar_t[TAG_SIZE];
+  char** tags = new char*[16];
+  for (int32_t index = 0; index < 16; index++) tags[index] = new char[TAG_SIZE];
   wcscpy_s(tags[0], TAG_SIZE, std::to_wstring(video.Bitrate()).c_str());
   Collections::IVector<winrt::hstring> directors = video.Directors();
   for (int32_t index = 0; index < directors.Size(); index++) {
@@ -1391,8 +1403,8 @@ DLLEXPORT wchar_t** TagsFromVideo(const wchar_t* uri) {
   return tags;
 }
 
-DLLEXPORT void TagsExtractThumbnail(const wchar_t* media, const wchar_t* folder,
-                                    const wchar_t* file_name, int32_t mode,
+DLLEXPORT void TagsExtractThumbnail(const char* media, const char* folder,
+                                    const char* file_name, int32_t mode,
                                     int32_t size) {
   StorageFile source_file = StorageFile::GetFileFromPathAsync(media).get();
   StorageFolder storage_folder =
@@ -1462,8 +1474,8 @@ DLLEXPORT void NativeControlsSetStatus(int32_t status) {
   controls.PlaybackStatus(static_cast<MediaPlaybackStatus>(status));
 }
 
-DLLEXPORT void NativeControlsUpdate(int32_t type, wchar_t** data,
-                                    const wchar_t* thumbnail) {
+DLLEXPORT void NativeControlsUpdate(int32_t type, char** data,
+                                    const char* thumbnail) {
   SystemMediaTransportControls controls =
       Playback::BackgroundMediaPlayer::Current().SystemMediaTransportControls();
   SystemMediaTransportControlsDisplayUpdater updater =
@@ -1539,6 +1551,12 @@ LRESULT CALLBACK VideoWindowProc(HWND window, UINT code, WPARAM wparam,
   }
   return DefWindowProcW(window, code, wparam, lparam);
 }
+
+#endif
+
+#ifdef __linux__
+
+DLLEXPORT void PlayerRun() { gtk_main(); }
 
 #endif
 

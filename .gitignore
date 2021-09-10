@@ -30,6 +30,7 @@ cmake_install.cmake
 
 .vscode
 
-# Makefile
+# Linux
 
+*.so
 Makefile
