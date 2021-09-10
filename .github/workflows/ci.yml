@@ -6,7 +6,7 @@ on:
 
 jobs:
   build_windows:
-    name: libwinmedia
+    name: libwinmedia Windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
@@ -16,12 +16,33 @@ jobs:
       - run: cmake --build . --config Release
       - uses: actions/upload-artifact@v1
         with:
-          name: libwinmedia-core
+          name: libwinmedia-windows-core
           path: Release
       - run: del CMakeCache.txt
       - run: cmake -DDART_VM=Enable .
       - run: cmake --build . --config Release
       - uses: actions/upload-artifact@v1
         with:
-          name: libwinmedia-dart-vm
+          name: libwinmedia-windows-dart-vm
           path: Release
+
+  build_linux:
+    name: libwinmedia Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: cmake .
+      - run: cmake --build . --config Release
+      - uses: actions/upload-artifact@v1
+        with:
+          name: libwinmedia-linux-core
+          path: libwinmedia.so
+      - run: del CMakeCache.txt
+      - run: cmake -DDART_VM=Enable .
+      - run: cmake --build . --config Release
+      - uses: actions/upload-artifact@v1
+        with:
+          name: libwinmedia-linux-dart-vm
+          path: libwinmedia.so
