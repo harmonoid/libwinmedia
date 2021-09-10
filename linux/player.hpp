@@ -25,6 +25,7 @@ class Player {
   int32_t duration() const { return duration_; }
   float volume() const { return volume_; }
   float rate() const { return rate_; }
+  int32_t index() const { return index_; }
   std::vector<int32_t>& media_ids() { return media_ids_; }
   std::vector<std::wstring>& media_uris() { return media_uris_; }
 
@@ -68,6 +69,8 @@ class Player {
 
   void SetRateEventHandler(std::function<void(float)> rate_callback);
 
+  void SetIndexEventHandler(std::function<void(float)> index_callback);
+
   void Run();
 
   webview::webview* webview() const { return webview_.get(); }
@@ -92,6 +95,7 @@ class Player {
   std::function<void(int32_t)> duration_callback_ = [](int32_t) {};
   std::function<void(float)> volume_callback_ = [](float) {};
   std::function<void(float)> rate_callback_ = [](float) {};
+  std::function<void(int32_t)> index_callback_ = [](int32_t) {};
   std::string source_ =
       std::filesystem::temp_directory_path().string() + "/source.html";
   std::unique_ptr<std::thread> thread_ = nullptr;
@@ -185,6 +189,7 @@ Player::Player(int32_t id, bool show_window = false,
   webview_->bind("isCompleted", [=](std::string event) -> std::string {
     is_completed_ = event.substr(1, event.size() - 2) == "true" ? true : false;
     is_completed_callback_(is_completed_);
+    if (is_completed_) Next();
     return "";
   });
   webview_->bind("position", [=](std::string event) -> std::string {
@@ -252,11 +257,13 @@ void Player::Stop() {
 }
 
 void Player::Next() {
+  if (index_ >= media_uris_.size() - 1) return;
   EnsureFuture();
   Jump(++index_);
 }
 
 void Player::Back() {
+  if (index_ <= 0) return;
   EnsureFuture();
   Jump(--index_);
 }
@@ -270,6 +277,7 @@ void Player::Jump(int32_t index) {
       std::string(media_uris_[index].begin(), media_uris_[index].end()) +
       "');");
   Play();
+  index_callback_(index_);
 }
 
 void Player::Seek(int32_t position) {
@@ -319,6 +327,10 @@ void Player::SetVolumeEventHandler(std::function<void(float)> volume_callback) {
 
 void Player::SetRateEventHandler(std::function<void(float)> rate_callback) {
   rate_callback_ = rate_callback;
+}
+
+void Player::SetIndexEventHandler(std::function<void(float)> index_callback) {
+  index_callback_ = index_callback;
 }
 
 void Player::Run() { webview_->run(); }
