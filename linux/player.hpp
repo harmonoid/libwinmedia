@@ -25,12 +25,14 @@ class Player {
   int32_t duration() const { return duration_; }
   float volume() const { return volume_; }
   float rate() const { return rate_; }
+  std::vector<int32_t>& media_ids() { return media_ids_; }
+  std::vector<std::wstring>& media_uris() { return media_uris_; }
 
   void ShowWindow();
 
   void CloseWindow();
 
-  void Open(std::vector<std::string> uris, std::vector<int32_t> ids);
+  void Open(std::vector<std::wstring> uris, std::vector<int32_t> ids);
 
   void Play();
 
@@ -75,7 +77,7 @@ class Player {
   int32_t id_;
   int32_t index_ = 0;
   std::vector<int32_t> media_ids_ = {};
-  std::vector<std::string> media_uris_ = {};
+  std::vector<std::wstring> media_uris_ = {};
   bool is_playing_ = false;
   bool is_buffering_ = false;
   bool is_completed_ = false;
@@ -223,12 +225,15 @@ void Player::CloseWindow() {
   gtk_widget_hide(GTK_WIDGET(webview_->window()));
 }
 
-void Player::Open(std::vector<std::string> uris, std::vector<int32_t> ids) {
+void Player::Open(std::vector<std::wstring> uris, std::vector<int32_t> ids) {
   EnsureFuture();
   index_ = 0;
   media_ids_ = ids;
   media_uris_ = uris;
-  webview_->eval("player.src = encodeURI('" + media_uris_.front() + "');");
+  webview_->eval(
+      "player.src = encodeURI('" +
+      std::string(media_uris_.front().begin(), media_uris_.front().end()) +
+      "');");
 }
 
 void Player::Play() {
@@ -260,7 +265,10 @@ void Player::Jump(int32_t index) {
   EnsureFuture();
   Pause();
   index_ = index;
-  webview_->eval("player.src = encodeURI('" + media_uris_.at(index_) + "');");
+  webview_->eval(
+      "player.src = encodeURI('" +
+      std::string(media_uris_[index].begin(), media_uris_[index].end()) +
+      "');");
   Play();
 }
 
