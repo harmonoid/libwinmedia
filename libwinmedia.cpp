@@ -342,7 +342,7 @@ DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const wchar_t** uris,
   Dart_CObject uris_object;
   uris_object.type = Dart_CObject_kArray;
   uris_object.value.as_array.length =
-      g_media_playback_lists.at(player_id).Items().Size();
+      g_media_players.at(player_id)->media_uris().size();
   uris_object.value.as_array.values = uri_object_refs.get();
   auto id_objects = std::unique_ptr<Dart_CObject[]>(
       new Dart_CObject[g_media_players.at(player_id)->media_ids().size()]);
@@ -358,7 +358,8 @@ DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const wchar_t** uris,
   }
   Dart_CObject ids_object;
   ids_object.type = Dart_CObject_kArray;
-  ids_object.value.as_array.length = g_media_ids_lists.at(player_id).size();
+  ids_object.value.as_array.length =
+      g_media_players.at(player_id)->media_ids().size();
   ids_object.value.as_array.values = id_object_refs.get();
   Dart_CObject* value_objects[] = {&player_id_object, &type_object,
                                    &uris_object, &ids_object};

@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 set(PROJECT_NAME libwinmedia)
-set(VERSION 0.0.1)
+set(VERSION 0.0.2)
 set(CPPWINRT_VERSION 2.0.210806.1)
 project(${PROJECT_NAME} LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 
-if (WIN32)
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
   message(
     "${PROJECT_NAME} - ${VERSION}\n"
     "-------------------\n"
@@ -59,4 +59,36 @@ if (WIN32)
     ${PROJECT_NAME} PRIVATE
     ${CPP_WINRT}/build/native/Microsoft.Windows.CppWinRT.targets
   )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  message(
+    "${PROJECT_NAME} - ${VERSION}\n"
+    "-------------------\n"
+    "Building on Linux against GTK 3.0 & WebKit2 4.0\n"
+    "C++ Standard: 17"
+  )
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)
+  pkg_check_modules(WebKit REQUIRED IMPORTED_TARGET webkit2gtk-4.0)
+  add_library(${PROJECT_NAME} SHARED
+    ${PROJECT_NAME}.cpp
+  )
+  set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME winmedia)
+  target_link_libraries(${PROJECT_NAME} PRIVATE PkgConfig::GTK)
+  target_link_libraries(${PROJECT_NAME} PRIVATE PkgConfig::WebKit)
+  if (DEFINED DART_VM)
+    message(
+      "Enabled Dart VM NativePorts callbacks."
+    )
+    target_include_directories(
+      ${PROJECT_NAME} PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/linux
+      ${CMAKE_CURRENT_SOURCE_DIR}/external/dart_api
+      ${CMAKE_CURRENT_SOURCE_DIR}/external/webview
+    )
+    add_definitions(-DDART_VM)
+  else()
+    message(
+      "Disabled Dart VM NativePorts callbacks."
+    )
+  endif()
 endif()
