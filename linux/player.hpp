@@ -234,9 +234,9 @@ void Player::Open(std::vector<std::string> uris, std::vector<int32_t> ids) {
   media_ids_ = ids;
   media_uris_ = uris;
   webview_->eval(
-      "player.src = encodeURI('" +
+      "player.src = '" +
       std::string(media_uris_.front().begin(), media_uris_.front().end()) +
-      "');");
+      "';");
 }
 
 void Player::Play() {
@@ -271,9 +271,8 @@ void Player::Jump(int32_t index) {
   Pause();
   index_ = index;
   webview_->eval(
-      "player.src = encodeURI('" +
-      std::string(media_uris_[index].begin(), media_uris_[index].end()) +
-      "');");
+      "player.src = '" +
+      std::string(media_uris_[index].begin(), media_uris_[index].end()) + "';");
   Play();
   index_callback_(index_);
 }
