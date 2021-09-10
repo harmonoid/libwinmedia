@@ -18,6 +18,14 @@ class Player {
  public:
   Player(int32_t id, bool show_window, std::wstring window_title);
 
+  bool is_playing() const { return is_playing_; }
+  bool is_buffering() const { return is_buffering_; }
+  bool is_completed() const { return is_completed_; }
+  int32_t position() const { return position_; }
+  int32_t duration() const { return duration_; }
+  float volume() const { return volume_; }
+  float rate() const { return rate_; }
+
   void ShowWindow();
 
   void CloseWindow();
@@ -52,6 +60,13 @@ class Player {
   int32_t index_ = 0;
   std::vector<int32_t> media_ids_ = {};
   std::vector<std::string> media_uris_ = {};
+  bool is_playing_ = false;
+  bool is_buffering_ = false;
+  bool is_completed_ = false;
+  int32_t position_ = 0;
+  int32_t duration_ = 0;
+  float volume_ = 0.0;
+  float rate_ = 0.0;
   std::string source_ =
       std::filesystem::temp_directory_path().string() + "/source.html";
   std::unique_ptr<std::thread> thread_ = nullptr;
@@ -133,31 +148,31 @@ Player::Player(int32_t id, bool show_window = false,
     return "";
   });
   webview_->bind("isPlaying", [=](std::string event) -> std::string {
-    std::cout << event << "\n";
+    is_playing_ = event.substr(1, event.size() - 2) == "true" ? true : false;
     return "";
   });
   webview_->bind("isBuffering", [=](std::string event) -> std::string {
-    std::cout << event << "\n";
+    is_buffering_ = event.substr(1, event.size() - 2) == "true" ? true : false;
     return "";
   });
   webview_->bind("isCompleted", [=](std::string event) -> std::string {
-    std::cout << event << "\n";
+    is_completed_ = event.substr(1, event.size() - 2) == "true" ? true : false;
     return "";
   });
   webview_->bind("position", [=](std::string event) -> std::string {
-    std::cout << event << "\n";
+    position_ = std::stoi(event.substr(1, event.size() - 2));
     return "";
   });
   webview_->bind("duration", [=](std::string event) -> std::string {
-    std::cout << event << "\n";
+    duration_ = std::stoi(event.substr(1, event.size() - 2));
     return "";
   });
   webview_->bind("volume", [=](std::string event) -> std::string {
-    std::cout << event << "\n";
+    volume_ = std::stof(event.substr(1, event.size() - 2));
     return "";
   });
   webview_->bind("rate", [=](std::string event) -> std::string {
-    std::cout << event << "\n";
+    rate_ = std::stof(event.substr(1, event.size() - 2));
     return "";
   });
   webview_->navigate("file://" + source_);
@@ -168,9 +183,15 @@ Player::Player(int32_t id, bool show_window = false,
   }
 }
 
-void Player::ShowWindow() { gtk_widget_show(GTK_WIDGET(webview_->window())); }
+void Player::ShowWindow() {
+  EnsureFuture();
+  gtk_widget_show(GTK_WIDGET(webview_->window()));
+}
 
-void Player::CloseWindow() { gtk_widget_hide(GTK_WIDGET(webview_->window())); }
+void Player::CloseWindow() {
+  EnsureFuture();
+  gtk_widget_hide(GTK_WIDGET(webview_->window()));
+}
 
 void Player::Open(std::vector<std::string> uris, std::vector<int32_t> ids) {
   EnsureFuture();
