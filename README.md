@@ -1,5 +1,5 @@
 <h1 align="center"><a href="https://github.com/libwinmedia/libwinmedia">libwinmedia</a></h1>
-<h4 align="center">A tiny high-level media playback library for C++.</h4>
+<h4 align="center">A media playback library for C++ with good number of features.</h4>
 
 
 <p align="center"><img height="400" src="https://github.com/libwinmedia/libwinmedia/blob/assets/screenshot.jpg?raw=true"></img></p>
@@ -178,6 +178,10 @@ player.ShowWindow();
 player.CloseWindow();
 ```
 
+## Notes
+
+### Windows
+
 You need to embed a manifest with `maxversiontested` property to the generated executable. The library creates a separate win32 window on another thread & uses XAML islands to render the `MediaPlayerElement` in it (for showing video). Learn more [here](https://docs.microsoft.com/en-us/windows/apps/desktop/modernize/host-standard-control-with-xaml-islands-cpp) & [here](https://docs.microsoft.com/en-us/cpp/build/how-to-embed-a-manifest-inside-a-c-cpp-application?view=msvc-160).
 
 ```manifest
@@ -191,6 +195,10 @@ You need to embed a manifest with `maxversiontested` property to the generated e
     </compatibility>
 </assembly>
 ```
+
+### Linux
+
+For the library to work, `gtk_main` must be called. Thus, all functions except creating `Player` object should be called from other worker threads.
 
 ## Upcoming Features
 
@@ -208,9 +216,9 @@ The main goals of creating [libwinmedia](https://github.com/libwinmedia/libwinme
 - Supporting multiple playback instances.
 - Supporting media tag-parsing & other things like lockscreen/system notifications.
 - Being permissively licensed.
-- Being cross-platform. **
+- Being cross-platform.
 
-** Currently only working on Windows.
+Currently only working on Windows & Linux.
 
 ## License 
 
