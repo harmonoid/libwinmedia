@@ -18,9 +18,29 @@ class Player {
  public:
   Player(int32_t id, bool show_window, std::wstring window_title);
 
-  void Open(std::string uri);
+  void ShowWindow();
+
+  void CloseWindow();
+
+  void Open(std::vector<std::string> uris, std::vector<int32_t> ids);
 
   void Play();
+
+  void Pause();
+
+  void Stop();
+
+  void Next();
+
+  void Back();
+
+  void Jump(int32_t index);
+
+  void Seek(int32_t position);
+
+  void SetVolume(float volume);
+
+  void SetRate(float rate);
 
   void Run();
 
@@ -29,6 +49,9 @@ class Player {
 
  private:
   int32_t id_;
+  int32_t index_ = 0;
+  std::vector<int32_t> media_ids_ = {};
+  std::vector<std::string> media_uris_ = {};
   std::string source_ =
       std::filesystem::temp_directory_path().string() + "/source.html";
   std::unique_ptr<std::thread> thread_ = nullptr;
@@ -38,12 +61,7 @@ class Player {
       std::make_unique<std::promise<void>>();
   bool initialized_ = false;
 
-  inline void LockGuard() {
-    if (!initialized_) {
-      promise_->get_future().wait();
-      initialized_ = true;
-    }
-  }
+  inline void EnsureFuture();
 
   static constexpr auto kPlayerSource =
       "<!DOCTYPE html>"
@@ -69,6 +87,35 @@ class Player {
       "</style>"
       "<script>"
       "   let player = document.getElementById('player');"
+      "   player.addEventListener('play', (event) => {"
+      "       isPlaying(true);"
+      "       isCompleted(false);"
+      "   });"
+      "   player.addEventListener('pause', (event) => {"
+      "       isPlaying(false);"
+      "   });"
+      "   player.addEventListener('playing', (event) => {"
+      "       isBuffering(false);"
+      "   });"
+      "   player.addEventListener('waiting', (event) => {"
+      "       isBuffering(true);"
+      "   });"
+      "   player.addEventListener('timeupdate', (event) => {"
+      "       position(Math.round(event.target.currentTime * 1000));"
+      "   });"
+      "   player.addEventListener('durationchange', (event) => {"
+      "       duration(Math.round(event.target.duration * 1000));"
+      "   });"
+      "   player.addEventListener('ended', (event) => {"
+      "       isPlaying(false);"
+      "       isCompleted(true);"
+      "   });"
+      "   player.addEventListener('volumechange', (event) => {"
+      "       volume(event.target.volume);"
+      "   });"
+      "   player.addEventListener('ratechange', (event) => {"
+      "       rate(event.target.rate);"
+      "   });"
       "   let button = document.createElement('button');"
       "   window.onload = () => initialized(null);"
       "</script>"
@@ -85,6 +132,34 @@ Player::Player(int32_t id, bool show_window = false,
     promise_->set_value();
     return "";
   });
+  webview_->bind("isPlaying", [=](std::string event) -> std::string {
+    std::cout << event << "\n";
+    return "";
+  });
+  webview_->bind("isBuffering", [=](std::string event) -> std::string {
+    std::cout << event << "\n";
+    return "";
+  });
+  webview_->bind("isCompleted", [=](std::string event) -> std::string {
+    std::cout << event << "\n";
+    return "";
+  });
+  webview_->bind("position", [=](std::string event) -> std::string {
+    std::cout << event << "\n";
+    return "";
+  });
+  webview_->bind("duration", [=](std::string event) -> std::string {
+    std::cout << event << "\n";
+    return "";
+  });
+  webview_->bind("volume", [=](std::string event) -> std::string {
+    std::cout << event << "\n";
+    return "";
+  });
+  webview_->bind("rate", [=](std::string event) -> std::string {
+    std::cout << event << "\n";
+    return "";
+  });
   webview_->navigate("file://" + source_);
   webview_->set_title(ConvertToString(window_title));
   webview_->set_size(480, 360, WEBVIEW_HINT_NONE);
@@ -93,16 +168,74 @@ Player::Player(int32_t id, bool show_window = false,
   }
 }
 
-void Player::Open(std::string uri) {
-  LockGuard();
-  webview_->eval("player.src = encodeURI('" + uri + "');");
+void Player::ShowWindow() { gtk_widget_show(GTK_WIDGET(webview_->window())); }
+
+void Player::CloseWindow() { gtk_widget_hide(GTK_WIDGET(webview_->window())); }
+
+void Player::Open(std::vector<std::string> uris, std::vector<int32_t> ids) {
+  EnsureFuture();
+  index_ = 0;
+  media_ids_ = ids;
+  media_uris_ = uris;
+  webview_->eval("player.src = encodeURI('" + media_uris_.front() + "');");
 }
 
 void Player::Play() {
-  LockGuard();
+  EnsureFuture();
   webview_->eval("player.play();");
 }
 
+void Player::Pause() {
+  EnsureFuture();
+  webview_->eval("player.pause();");
+}
+
+void Player::Stop() {
+  EnsureFuture();
+  webview_->terminate();
+}
+
+void Player::Next() {
+  EnsureFuture();
+  Jump(++index_);
+}
+
+void Player::Back() {
+  EnsureFuture();
+  Jump(--index_);
+}
+
+void Player::Jump(int32_t index) {
+  EnsureFuture();
+  Pause();
+  index_ = index;
+  webview_->eval("player.src = encodeURI('" + media_uris_.at(index_) + "');");
+  Play();
+}
+
+void Player::Seek(int32_t position) {
+  EnsureFuture();
+  webview_->eval("player.currentTime = " + std::to_string(position) +
+                 " / 1000.0;");
+};
+
+void Player::SetVolume(float volume) {
+  EnsureFuture();
+  webview_->eval("player.volume = " + std::to_string(volume) + ";");
+}
+
+void Player::SetRate(float rate) {
+  EnsureFuture();
+  webview_->eval("player.playbackRate = " + std::to_string(rate) + ";");
+}
+
 void Player::Run() { webview_->run(); }
+
+void Player::EnsureFuture() {
+  if (!initialized_) {
+    promise_->get_future().wait();
+    initialized_ = true;
+  }
+}
 
 #endif
