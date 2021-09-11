@@ -1,7 +1,8 @@
 #include <functional>
+#include <thread>
 
-#include "Internal.hpp"
-#include "Media.hpp"
+#include "internal.hpp"
+#include "media.hpp"
 
 #ifndef PLAYER_HEADER
 #define PLAYER_HEADER
@@ -132,6 +133,9 @@ class Player {
       : id_(id) {
     Internal::PlayerCreate(id, show_window, window_title.c_str());
     events_ = std::make_unique<PlayerEvents>(id_);
+#ifdef __linux__
+    new std::thread([=]() -> void { Internal::PlayerRun(); });
+#endif
   }
 
   PlayerEvents* events() const { return events_.get(); }
@@ -204,7 +208,7 @@ class Player {
   int32_t id_;
   std::unique_ptr<PlayerEvents> events_;
 };
-}
+}  // namespace lwm
 
 #ifdef __cplusplus
 }

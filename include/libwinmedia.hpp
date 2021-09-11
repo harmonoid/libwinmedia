@@ -58,7 +58,7 @@
  * SOFTWARE.
  */
 
-#include "player.hpp"
 #include "media.hpp"
-#include "tags.hpp"
 #include "nativecontrols.hpp"
+#include "player.hpp"
+#include "tags.hpp"

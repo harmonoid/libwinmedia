@@ -1,5 +1,5 @@
-#include <memory>
 #include <cstdint>
+#include <memory>
 
 #define VIDEO_WINDOW_CLASS "libwinmedia"
 #ifndef UNICODE
@@ -122,7 +122,11 @@ void NativeControlsUpdate(int32_t type, char** data, const char* thumbnail);
 void NativeControlsClear();
 
 void NativeControlsDispose();
-}
+
+#ifdef __linux__
+void PlayerRun();
+#endif
+}  // namespace Internal
 
 #ifdef __cplusplus
 }

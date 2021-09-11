@@ -1,7 +1,7 @@
+#include <cstring>
 #include <functional>
-#include <cwchar>
 
-#include "Internal.hpp"
+#include "internal.hpp"
 
 #ifndef NATIVECONTROLS_HEADER
 #define NATIVECONTROLS_HEADER
@@ -45,7 +45,7 @@ class NativeControlsState {
   virtual int32_t Type() const = 0;
 
  protected:
-  std::unique_ptr<char* []> data_;
+  std::unique_ptr<char*[]> data_;
 };
 
 class MusicNativeControlState : public NativeControlsState {
@@ -53,7 +53,7 @@ class MusicNativeControlState : public NativeControlsState {
   MusicNativeControlState(std::string album_artist, std::string album,
                           std::string track_count, std::string artist,
                           std::string title, std::string track_number) {
-    data_ = std::unique_ptr<char* []>(new char*[6]);
+    data_ = std::unique_ptr<char*[]>(new char*[6]);
     for (int32_t i = 0; i < 6; i++) data_[i] = new char[200];
     strncpy(data_[0], album_artist.c_str(), 200);
     strncpy(data_[1], album.c_str(), 200);
@@ -73,7 +73,7 @@ class MusicNativeControlState : public NativeControlsState {
 class VideoNativeControlState : public NativeControlsState {
  public:
   VideoNativeControlState(std::string title, std::string subtitle) {
-    data_ = std::unique_ptr<char* []>(new char*[2]);
+    data_ = std::unique_ptr<char*[]>(new char*[2]);
     for (int32_t i = 0; i < 2; i++) data_[i] = new char[200];
     strncpy(data_[0], title.c_str(), 200);
     strncpy(data_[1], subtitle.c_str(), 200);
@@ -117,7 +117,7 @@ class NativeControls {
     NativeControls::handler(static_cast<NativeControlsButton>(button));
   }
 };
-}
+}  // namespace lwm
 
 #ifdef __cplusplus
 }

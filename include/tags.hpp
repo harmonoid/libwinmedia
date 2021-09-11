@@ -1,7 +1,7 @@
 #include <map>
 #include <string>
 
-#include "Internal.hpp"
+#include "internal.hpp"
 
 #ifndef TAGS_HEADER
 #define TAGS_HEADER
@@ -159,7 +159,7 @@ class Tags {
                                    static_cast<int>(mode), size);
   }
 };
-}
+}  // namespace lwm
 
 #ifdef __cplusplus
 }
