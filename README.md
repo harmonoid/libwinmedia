@@ -1,5 +1,5 @@
 <h1 align="center"><a href="https://github.com/libwinmedia/libwinmedia">libwinmedia</a></h1>
-<h4 align="center">A media playback library for C++ with good number of features.</h4>
+<h4 align="center">A cross-platform media playback library for C/C++ with good number of features.</h4>
 
 
 <p align="center"><img height="400" src="https://github.com/libwinmedia/libwinmedia/blob/assets/screenshot.jpg?raw=true"></img></p>
@@ -11,26 +11,22 @@ A very simple example can be as follows.
 ```cpp
 #include "libwinmedia/libwinmedia.hpp"
 
-auto TO_WIDESTRING = [](const char* array) -> std::wstring {
-  std::string string(array);
-  return std::wstring(string.begin(), string.end());
-};
-
-int main(int ac, const char** av) {
+int32_t main(int32_t ac, const char** av) {
   using namespace std;
   using namespace lwm;
   if (ac < 2) {
-    wcout << L"No URI provided.\n" << L"Example Usage:\n" << av[0]
-          << L" file://C:/alexmercerind/music.mp3\n" << av[0]
-          << L" https://alexmercerind.github.io/video.mp4\n";
+    cout << "No URI provided.\n"
+         << "Example Usage:\n" << av[0]
+         << " file://C:/alexmercerind/music.mp3\n" << av[0]
+         << " https://alexmercerind.github.io/video.mp4\n";
     return EXIT_FAILURE;
   }
   auto player = Player(0);
-  auto media = Media(TO_WIDESTRING(av[1]));
+  auto media = Media(av[1]);
   player.Open(vector<Media>{media});
   player.Play();
-  player.events()->Position([](int position) -> void {
-    wcout << L"Current playback position is " << position << L" ms.\n";
+  player.events()->Position([](int32_t position) -> void {
+    cout << "Current playback position is " << position << " ms.\n";
   });
   cin.get();
   return EXIT_SUCCESS;
@@ -38,7 +34,21 @@ int main(int ac, const char** av) {
 
 ```
 
+## Support
+
+Consider supporting the project by starring the repository or buying me a coffee.
+
+<a href="https://www.buymeacoffee.com/alexmercerind"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=alexmercerind&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff"></a>
+
+Thanks a lot for your support.
+
 ## Documentation
+
+### Setup
+
+For using the library on Windows, you can download the pre-compiled shared library from the [releases page](https://github.com/harmonoid/libwinmedia/releases) & headers can be found [here](https://github.com/harmonoid/libwinmedia/tree/master/include).
+
+### Usage
 
 **Create a new player.**
 
@@ -123,14 +133,14 @@ Update the native system media controls.
 ```cpp
 controls.Update(
   std::make_shared<lwm::MusicNativeControlState>(
-    L"album_artist",
-    L"album",
-    L"track_count",
-    L"artist",
-    L"title",
-    L"track_number"
+    "album_artist",
+    "album",
+    "track_count",
+    "artist",
+    "title",
+    "track_number"
   ),
-  L"file://C:/Users/Hitesh/Pictures/AlbumArt.PNG"
+  "file://C:/Users/Hitesh/Pictures/AlbumArt.PNG"
 );
 ```
 
@@ -144,9 +154,10 @@ controls.Dispose();
 
 ```cpp
 auto tags = lwm::Tags::FromMusic(std::wstring(music_file));
-std::wcout << L"album        : " << tags.album() << ".\n"
-           << L"album_artist : " << tags.album_artist() << ".\n"
-           << L"bitrate      : " << tags.bitrate() << ".\n";
+std::wcout << "album        : " << tags.album() << ".\n"
+           << "album_artist : " << tags.album_artist() << ".\n"
+           << "bitrate      : " << tags.bitrate() << ".\n";
+           
 // Other metadata tags.
 ```
 
@@ -156,7 +167,7 @@ std::wcout << L"album        : " << tags.album() << ".\n"
 lwm::Tags::ExtractThumbnail(
   music_file,
   TO_WIDESTRING(std::filesystem::current_path().string()),
-  L"ExtractedAlbumArt.PNG",
+  "ExtractedAlbumArt.PNG",
   lwm::ThumbnailMode::Music,
   400
 );
@@ -200,12 +211,6 @@ You need to embed a manifest with `maxversiontested` property to the generated e
 
 For the library to work, `gtk_main` must be called. Thus, all functions except creating `Player` object should be called from other worker threads.
 
-## Upcoming Features
-
-- Fixes to multiple video windows.
-- Improving memory usage.
-- Adding video frame callbacks.
-
 ## Aim
 
 The main goals of creating [libwinmedia](https://github.com/libwinmedia/libwinmedia) are:
@@ -216,9 +221,9 @@ The main goals of creating [libwinmedia](https://github.com/libwinmedia/libwinme
 - Supporting multiple playback instances.
 - Supporting media tag-parsing & other things like lockscreen/system notifications.
 - Being permissively licensed.
-- Being cross-platform.
+- Being cross-platform **.
 
-Currently only working on Windows & Linux.
+** Currently only working on Windows & Linux.
 
 ## License 
 
