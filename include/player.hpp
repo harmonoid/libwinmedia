@@ -128,7 +128,7 @@ class PlayerEvents {
 class Player {
  public:
   Player(int32_t id, bool show_window = false,
-         std::wstring window_title = VIDEO_WINDOW_CLASS)
+         std::string window_title = VIDEO_WINDOW_CLASS)
       : id_(id) {
     Internal::PlayerCreate(id, show_window, window_title.c_str());
     events_ = std::make_unique<PlayerEvents>(id_);
@@ -137,7 +137,7 @@ class Player {
   PlayerEvents* events() const { return events_.get(); }
 
   void Open(std::vector<Media> medias) {
-    std::vector<const wchar_t*> uris;
+    std::vector<const char*> uris;
     uris.reserve(medias.size());
     std::vector<int32_t> ids;
     ids.reserve(medias.size());
@@ -164,7 +164,7 @@ class Player {
 
   void Remove(int32_t index) { Internal::PlayerRemove(id_, index); }
 
-  void ShowWindow(std::wstring window_title = VIDEO_WINDOW_CLASS) {
+  void ShowWindow(std::string window_title = VIDEO_WINDOW_CLASS) {
     Internal::PlayerShowWindow(id_, window_title.c_str());
   }
 

@@ -40,27 +40,27 @@ class NativeControlsState {
  public:
   NativeControlsState() {}
 
-  wchar_t** data() const { return data_.get(); }
+  char** data() const { return data_.get(); }
 
   virtual int32_t Type() const = 0;
 
  protected:
-  std::unique_ptr<wchar_t* []> data_;
+  std::unique_ptr<char* []> data_;
 };
 
 class MusicNativeControlState : public NativeControlsState {
  public:
-  MusicNativeControlState(std::wstring album_artist, std::wstring album,
-                          std::wstring track_count, std::wstring artist,
-                          std::wstring title, std::wstring track_number) {
-    data_ = std::unique_ptr<wchar_t* []>(new wchar_t*[6]);
-    for (int32_t i = 0; i < 6; i++) data_[i] = new wchar_t[200];
-    wcscpy_s(data_[0], 200, album_artist.c_str());
-    wcscpy_s(data_[1], 200, album.c_str());
-    wcscpy_s(data_[2], 200, track_count.c_str());
-    wcscpy_s(data_[3], 200, artist.c_str());
-    wcscpy_s(data_[4], 200, title.c_str());
-    wcscpy_s(data_[5], 200, track_number.c_str());
+  MusicNativeControlState(std::string album_artist, std::string album,
+                          std::string track_count, std::string artist,
+                          std::string title, std::string track_number) {
+    data_ = std::unique_ptr<char* []>(new char*[6]);
+    for (int32_t i = 0; i < 6; i++) data_[i] = new char[200];
+    strncpy(data_[0], album_artist.c_str(), 200);
+    strncpy(data_[1], album.c_str(), 200);
+    strncpy(data_[2], track_count.c_str(), 200);
+    strncpy(data_[3], artist.c_str(), 200);
+    strncpy(data_[4], title.c_str(), 200);
+    strncpy(data_[5], track_number.c_str(), 200);
   }
 
   int32_t Type() const override { return 1; }
@@ -72,11 +72,11 @@ class MusicNativeControlState : public NativeControlsState {
 
 class VideoNativeControlState : public NativeControlsState {
  public:
-  VideoNativeControlState(std::wstring title, std::wstring subtitle) {
-    data_ = std::unique_ptr<wchar_t* []>(new wchar_t*[2]);
-    for (int32_t i = 0; i < 2; i++) data_[i] = new wchar_t[200];
-    wcscpy_s(data_[0], 200, title.c_str());
-    wcscpy_s(data_[1], 200, subtitle.c_str());
+  VideoNativeControlState(std::string title, std::string subtitle) {
+    data_ = std::unique_ptr<char* []>(new char*[2]);
+    for (int32_t i = 0; i < 2; i++) data_[i] = new char[200];
+    strncpy(data_[0], title.c_str(), 200);
+    strncpy(data_[1], subtitle.c_str(), 200);
   }
 
   int32_t Type() const override { return 2; }
@@ -97,7 +97,7 @@ class NativeControls {
   }
 
   void Update(std::shared_ptr<NativeControlsState> state,
-              std::wstring thumbnail = L"") {
+              std::string thumbnail = "") {
     Internal::NativeControlsUpdate(state->Type(), state->data(),
                                    thumbnail.c_str());
   }

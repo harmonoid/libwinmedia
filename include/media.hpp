@@ -14,7 +14,7 @@ class Player;
 
 class Media {
  public:
-  Media(std::wstring uri, int32_t id = 0, bool parse = false)
+  Media(std::string uri, int32_t id = 0, bool parse = false)
       : id_(id), uri_(uri) {
     if (parse) {
       Internal::MediaCreate(id_, uri.c_str(), parse);
@@ -24,7 +24,7 @@ class Media {
 
   int32_t id() const { return id_; }
 
-  std::wstring& uri() { return uri_; }
+  std::string& uri() { return uri_; }
 
   int32_t duration() const { return duration_; }
 
@@ -32,7 +32,7 @@ class Media {
 
  private:
   int32_t id_;
-  std::wstring uri_;
+  std::string uri_;
   int32_t duration_;
   friend class Player;
 };

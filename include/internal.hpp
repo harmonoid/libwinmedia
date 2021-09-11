@@ -1,7 +1,7 @@
 #include <memory>
 #include <cstdint>
 
-#define VIDEO_WINDOW_CLASS L"libwinmedia"
+#define VIDEO_WINDOW_CLASS "libwinmedia"
 #ifndef UNICODE
 #define UNICODE
 #define _UNICODE
@@ -15,23 +15,23 @@ extern "C" {
 namespace Internal {
 
 void PlayerShowWindow(int32_t player_id,
-                      const wchar_t* window_title = VIDEO_WINDOW_CLASS);
+                      const char* window_title = VIDEO_WINDOW_CLASS);
 
 void PlayerCloseWindow(int32_t player_id);
 
 void PlayerCreate(int32_t player_id, bool show_window = false,
-                  const wchar_t* window_title = VIDEO_WINDOW_CLASS);
+                  const char* window_title = VIDEO_WINDOW_CLASS);
 
 void PlayerDispose(int32_t player_id);
 
-void PlayerOpen(int32_t player_id, int32_t size, const wchar_t** uris,
+void PlayerOpen(int32_t player_id, int32_t size, const char** uris,
                 const int32_t* ids);
 
 void PlayerPlay(int32_t player_id);
 
 void PlayerPause(int32_t player_id);
 
-void PlayerAdd(int32_t player_id, const wchar_t* uri, int32_t id);
+void PlayerAdd(int32_t player_id, const char* uri, int32_t id);
 
 void PlayerRemove(int32_t player_id, int32_t index);
 
@@ -93,32 +93,31 @@ void PlayerNativeControlsCreate(int32_t player_id,
 
 void PlayerNativeControlsSetStatus(int32_t player_id, int32_t status);
 
-void PlayerNativeControlsUpdate(int32_t player_id, int32_t type, wchar_t** data,
-                                const wchar_t* thumbnail);
+void PlayerNativeControlsUpdate(int32_t player_id, int32_t type, char** data,
+                                const char* thumbnail);
 
 void PlayerNativeControlsClear(int32_t player_id);
 
 void PlayerNativeControlsDispose(int32_t player_id);
 
-void MediaCreate(int32_t media_id, const wchar_t* uri, bool parse = false);
+void MediaCreate(int32_t media_id, const char* uri, bool parse = false);
 
 void MediaDispose(int32_t media_id);
 
 int32_t MediaGetDuration(int32_t media_id);
 
-wchar_t** TagsFromMusic(const wchar_t* uri);
+char** TagsFromMusic(const char* uri);
 
-wchar_t** TagsFromVideo(const wchar_t* uri);
+char** TagsFromVideo(const char* uri);
 
-void TagsExtractThumbnail(const wchar_t* media, const wchar_t* folder,
-                          const wchar_t* file_name, int32_t mode, int32_t size);
+void TagsExtractThumbnail(const char* media, const char* folder,
+                          const char* file_name, int32_t mode, int32_t size);
 
 void NativeControlsCreate(void (*callback)(int32_t button));
 
 void NativeControlsSetStatus(int32_t status);
 
-void NativeControlsUpdate(int32_t type, wchar_t** data,
-                          const wchar_t* thumbnail);
+void NativeControlsUpdate(int32_t type, char** data, const char* thumbnail);
 
 void NativeControlsClear();
 
