@@ -427,7 +427,7 @@ DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const char** uris,
       g_media_players.at(player_id)->media_uris().size());
   for (int32_t i = 0; i < g_media_players.at(player_id)->media_uris().size();
        i++) {
-    uris_str[i] = TO_STRING(g_media_players.at(player_id)->media_uris()[i]);
+    uris_str[i] = g_media_players.at(player_id)->media_uris()[i];
     uris_ptr[i] = uris_str[i].data();
     Dart_CObject* value_object = &uri_objects[i];
     value_object->type = Dart_CObject_kString;
