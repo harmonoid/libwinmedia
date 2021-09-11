@@ -129,12 +129,14 @@ class PlayerEvents {
 class Player {
  public:
   Player(int32_t id, bool show_window = false,
-         std::string window_title = VIDEO_WINDOW_CLASS)
+         std::string window_title = VIDEO_WINDOW_CLASS, bool start_loop = true)
       : id_(id) {
     Internal::PlayerCreate(id, show_window, window_title.c_str());
     events_ = std::make_unique<PlayerEvents>(id_);
 #ifdef __linux__
-    new std::thread([=]() -> void { Internal::PlayerRun(); });
+    if (start_loop) {
+      new std::thread([=]() -> void { Internal::PlayerRun(); });
+    }
 #endif
   }
 

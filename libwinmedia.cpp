@@ -321,8 +321,8 @@ DLLEXPORT void PlayerCreate(int32_t player_id, bool show_window = false,
         std::make_unique<Player>(player_id, show_window, window_title)));
     g_media_players_promises.at(player_id).set_value();
   });
-// TODO (alexmercerind): This is not safe, ensure callback invoke before any
-// other Player API calls.
+  // TODO (alexmercerind): This is not safe, ensure callback invoke before any
+  // other Player API calls.
 #endif
 }
 
@@ -1688,7 +1688,7 @@ LRESULT CALLBACK VideoWindowProc(HWND window, UINT code, WPARAM wparam,
 
 #ifdef __linux__
 
-DLLEXPORT void PlayerRun() { gtk_main(); }
+DLLEXPORT void PlayerRun() { new std::thread(gtk_main); }
 
 #endif
 
