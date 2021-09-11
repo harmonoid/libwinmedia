@@ -34,6 +34,8 @@ int32_t main(int32_t ac, const char** av) {
 
 ```
 
+**Checkout [bindings](#bindings) section for using library in Python or Dart.**
+
 ## Support
 
 Consider supporting the project by starring the repository or buying me a coffee.
@@ -193,6 +195,8 @@ player.CloseWindow();
 
 ### Windows
 
+**For showing video**
+
 You need to embed a manifest with `maxversiontested` property to the generated executable. The library creates a separate win32 window on another thread & uses XAML islands to render the `MediaPlayerElement` in it (for showing video). Learn more [here](https://docs.microsoft.com/en-us/windows/apps/desktop/modernize/host-standard-control-with-xaml-islands-cpp) & [here](https://docs.microsoft.com/en-us/cpp/build/how-to-embed-a-manifest-inside-a-c-cpp-application?view=msvc-160).
 
 ```manifest
@@ -207,10 +211,6 @@ You need to embed a manifest with `maxversiontested` property to the generated e
 </assembly>
 ```
 
-### Linux
-
-For the library to work, `gtk_main` must be called. Thus, all functions except creating `Player` object should be called from other worker threads.
-
 ## Aim
 
 The main goals of creating [libwinmedia](https://github.com/libwinmedia/libwinmedia) are:
@@ -224,6 +224,12 @@ The main goals of creating [libwinmedia](https://github.com/libwinmedia/libwinme
 - Being cross-platform **.
 
 ** Currently only working on Windows & Linux.
+
+
+## Bindings
+
+- [libwinmedia-py](https://github.com/libwinmedia/libwinmedia-py): libwinmedia bindings for Python.
+- [libwinmedia.dart](https://github.com/harmonoid/libwinmedia.dart): libwinmedia bindings for Dart & Flutter.
 
 ## License 
 
