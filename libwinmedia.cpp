@@ -365,7 +365,8 @@ DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const char** uris,
                                 .GetAt(i)
                                 .Source()
                                 .Uri()
-                                .ToString());
+                                .ToString()
+                                .c_str());
     uris_ptr[i] = uris_str[i].data();
     Dart_CObject* value_object = &uri_objects[i];
     value_object->type = Dart_CObject_kString;
@@ -511,7 +512,8 @@ DLLEXPORT void PlayerAdd(int32_t player_id, const char* uri, int32_t id) {
                                 .GetAt(i)
                                 .Source()
                                 .Uri()
-                                .ToString());
+                                .ToString()
+                                .c_str());
     uris_ptr[i] = uris_str[i].data();
     Dart_CObject* value_object = &uri_objects[i];
     value_object->type = Dart_CObject_kString;
@@ -577,7 +579,8 @@ DLLEXPORT void PlayerRemove(int32_t player_id, int32_t index) {
                                 .GetAt(i)
                                 .Source()
                                 .Uri()
-                                .ToString());
+                                .ToString()
+                                .c_str());
     uris_ptr[i] = uris_str[i].data();
     Dart_CObject* value_object = &uri_objects[i];
     value_object->type = Dart_CObject_kString;
