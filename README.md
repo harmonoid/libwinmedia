@@ -1,17 +1,15 @@
 <h1 align="center"><a href="https://github.com/libwinmedia/libwinmedia">libwinmedia</a></h1>
 <h4 align="center">A cross-platform media playback library for C/C++ & Flutter with good number of features.</h4>
 
-
 <p align="center">
-  <img height="400" src="https://github.com/libwinmedia/libwinmedia/blob/assets/screenshot.jpg?raw=true"></img>
-  <img height="400" src="https://user-images.githubusercontent.com/28951144/132977554-f755e62c-0e22-4ef9-9b22-7bc45cf93e4a.png"></img>
+  <img height="500" src="https://user-images.githubusercontent.com/28951144/132977554-f755e62c-0e22-4ef9-9b22-7bc45cf93e4a.png"></img>
 </p>
 
 ## Example
 
 A very simple example can be as follows.
 
-**C++**
+### C++
 
 ```cpp
 #include "libwinmedia/libwinmedia.hpp"
@@ -38,7 +36,9 @@ int32_t main(int32_t ac, const char** av) {
 }
 ```
 
-**Flutter**
+### Flutter
+
+**More about Flutter [here](https://github.com/harmonoid/libwinmedia/tree/master/flutter/README.md) or on the [pub.dev](https://pub.dev/packages/libwinmedia).**
 
 ```yaml
 dependencies:
@@ -80,8 +80,6 @@ void demo() {
   );
 }
 ```
-
-More about Flutter [here](https://github.com/harmonoid/libwinmedia/tree/master/flutter/README.md).
 
 ## Support
 
