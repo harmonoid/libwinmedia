@@ -1,5 +1,5 @@
 <h1 align="center"><a href="https://github.com/libwinmedia/libwinmedia">libwinmedia</a></h1>
-<h4 align="center">A cross-platform media playback library for C/C++ with good number of features.</h4>
+<h4 align="center">A cross-platform media playback library for C/C++ & Flutter with good number of features.</h4>
 
 
 <p align="center"><img height="400" src="https://github.com/libwinmedia/libwinmedia/blob/assets/screenshot.jpg?raw=true"></img></p>
@@ -7,6 +7,8 @@
 ## Example
 
 A very simple example can be as follows.
+
+**C++**
 
 ```cpp
 #include "libwinmedia/libwinmedia.hpp"
@@ -31,10 +33,46 @@ int32_t main(int32_t ac, const char** av) {
   cin.get();
   return EXIT_SUCCESS;
 }
-
 ```
 
-**Checkout [bindings](#bindings) section for using library in Python or Dart.**
+**Flutter**
+
+```dart
+import 'package:libwinmedia/libwinmedia.dart';
+
+void main() {
+  LWM.initialize();
+  runApp(MyApp());
+}
+
+void demo() {
+  var player = Player(id: 0);
+  player.streams.medias.listen((List<Media> medias) {});
+  player.streams.isPlaying.listen((bool isPlaying) {});
+  player.streams.isBuffering.listen((bool isBuffering) {});
+  player.streams.isCompleted.listen((bool isCompleted) {});
+  player.streams.position.listen((Duration position) {});
+  player.streams.duration.listen((Duration duration) {});
+  player.streams.index.listen((int index) {});
+  player.open([
+    Media(uri: 'https://www.example.com/media/music.mp3'),
+    Media(uri: 'file://C:/documents/video.mp4'),
+  ]);
+  player.play();
+  player.seek(Duration(seconds: 20));
+  player.nativeControls.update(
+    album: 'Fine Line',
+    albumArtist: 'Harry Styles',
+    trackCount: 12,
+    artist: 'Harry Styles',
+    title: 'Lights Up',
+    trackNumber: 1,
+    thumbnail: File('album_art.png'),
+  );
+}
+```
+
+More about Flutter [here](https://github.com/harmonoid/libwinmedia/tree/master/flutter/README.md).
 
 ## Support
 
@@ -183,7 +221,7 @@ For showing video, you must instantiate player as follows.
 Player player = Player(0, true);
 ```
 
-**Control video output**
+**Control video output.**
 
 ```cpp
 player.ShowWindow();
@@ -229,7 +267,7 @@ The main goals of creating [libwinmedia](https://github.com/libwinmedia/libwinme
 ## Bindings
 
 - [libwinmedia-py](https://github.com/libwinmedia/libwinmedia-py): libwinmedia bindings for Python.
-- [libwinmedia.dart](https://github.com/harmonoid/libwinmedia.dart): libwinmedia bindings for Dart & Flutter.
+- [libwinmedia.dart](https://github.com/harmonoid/libwinmedia/tree/master/flutter): libwinmedia bindings for Flutter.
 
 ## License 
 
