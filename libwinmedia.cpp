@@ -57,8 +57,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef UNICODE
 #define UNICODE
 #define _UNICODE
+#endif
 #include <cwchar>
 #include <iostream>
 #include <memory>
@@ -304,6 +306,9 @@ DLLEXPORT void PlayerCloseWindow(int32_t player_id) {
 
 DLLEXPORT void PlayerCreate(int32_t player_id, bool show_window = false,
                             const char* window_title = VIDEO_WINDOW_CLASS) {
+  if (g_media_players.find(player_id) != g_media_players.end()) {
+    return;
+  }
 #ifdef _WIN32
   g_media_players.insert(std::make_pair(player_id, Playback::MediaPlayer()));
   g_media_playback_lists.insert(
