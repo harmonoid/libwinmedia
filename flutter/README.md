@@ -3,6 +3,8 @@
 
 <br></br>
 
+![](https://user-images.githubusercontent.com/28951144/132977554-f755e62c-0e22-4ef9-9b22-7bc45cf93e4a.png)
+
 ## Install
 
 ```yaml
@@ -50,6 +52,8 @@ void demo() {
 }
 ```
 
+Checkout the other APIs & docstrings within the project, for more detailed information. Those are the most updated source of documentation.
+
 ## Support
 
 Consider supporting the project by starring the repository or buying me a coffee.
@@ -58,7 +62,6 @@ Consider supporting the project by starring the repository or buying me a coffee
 
 Thanks a lot for your support.
 
-Checkout the other APIs & docstrings within the project, for more detailed information. Those are the most updated source of documentation.
 
 ## Contributions
 
