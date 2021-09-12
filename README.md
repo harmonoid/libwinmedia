@@ -2,7 +2,10 @@
 <h4 align="center">A cross-platform media playback library for C/C++ & Flutter with good number of features.</h4>
 
 
-<p align="center"><img height="400" src="https://github.com/libwinmedia/libwinmedia/blob/assets/screenshot.jpg?raw=true"></img></p>
+<p align="center">
+  <img height="400" src="https://github.com/libwinmedia/libwinmedia/blob/assets/screenshot.jpg?raw=true"></img>
+  <img height="400" src="https://user-images.githubusercontent.com/28951144/132977554-f755e62c-0e22-4ef9-9b22-7bc45cf93e4a.png"></img>
+</p>
 
 ## Example
 
@@ -39,7 +42,7 @@ int32_t main(int32_t ac, const char** av) {
 
 ```yaml
 dependencies:
-  
+  ...
   libwinmedia: ^0.0.1
 ```
 
