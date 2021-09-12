@@ -482,6 +482,17 @@ class _PlayerStreams {
   /// Index of the currently playing [Media] in the queue.
   late Stream<int> index;
 
+  /// Closes all the stream controllers.
+  void dispose() {
+    mediasController.close();
+    isPlayingController.close();
+    isBufferingController.close();
+    isCompletedController.close();
+    positionController.close();
+    durationController.close();
+    indexController.close();
+  }
+
   _PlayerStreams() {
     medias = mediasController.stream;
     isPlaying = isPlayingController.stream;

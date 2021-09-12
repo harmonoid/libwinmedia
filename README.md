@@ -37,6 +37,12 @@ int32_t main(int32_t ac, const char** av) {
 
 **Flutter**
 
+```yaml
+dependencies:
+  
+  libwinmedia: ^0.0.1
+```
+
 ```dart
 import 'package:libwinmedia/libwinmedia.dart';
 
