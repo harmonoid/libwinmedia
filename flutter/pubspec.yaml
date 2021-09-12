@@ -28,3 +28,5 @@ flutter:
     platforms:
       linux:
         pluginClass: LibwinmediaPlugin
+      windows:
+        pluginClass: LibwinmediaPlugin

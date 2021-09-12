@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ffi';
 import 'dart:async';
 import 'package:ffi/ffi.dart';
@@ -167,9 +168,11 @@ class Player {
       showWindow,
       windowTitle.toNativeUtf8(),
     );
-    if (startLoop) {
-      LWM.dynamicLibrary
-          .lookupFunction<Void Function(), void Function()>('PlayerRun')();
+    if (Platform.isLinux) {
+      if (startLoop) {
+        LWM.dynamicLibrary
+            .lookupFunction<Void Function(), void Function()>('PlayerRun')();
+      }
     }
     LWM.bindings.PlayerSetRateEventHandler(
       id,

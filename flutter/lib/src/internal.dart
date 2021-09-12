@@ -118,6 +118,16 @@ abstract class LWM {
         ),
       );
     }
+    if (Platform.isWindows) {
+      LWM.dynamicLibrary = DynamicLibrary.open(
+        join(
+          dirname(
+            Platform.resolvedExecutable,
+          ),
+          'libwinmedia.dll',
+        ),
+      );
+    }
     LWM.bindings = ffi.LWM(dynamicLibrary);
     LWM.bindings.InitializeDartApi(
       NativeApi.postCObject,
