@@ -1,4 +1,6 @@
+#ifndef UNICODE
 #define UNICODE
+#endif
 #include <filesystem>
 #include <fstream>
 #include <future>
@@ -175,39 +177,69 @@ Player::Player(int32_t id, bool show_window = false,
     return "";
   });
   webview_->bind("isPlaying", [=](std::string event) -> std::string {
-    is_playing_ = event.substr(1, event.size() - 2) == "true" ? true : false;
-    is_playing_callback_(is_playing_);
+    if (event == "[null]") return "";
+    try {
+      is_playing_ = event.substr(1, event.size() - 2) == "true" ? true : false;
+      is_playing_callback_(is_playing_);
+    } catch (...) {
+    }
     return "";
   });
   webview_->bind("isBuffering", [=](std::string event) -> std::string {
-    is_buffering_ = event.substr(1, event.size() - 2) == "true" ? true : false;
-    is_buffering_callback_(is_buffering_);
+    if (event == "[null]") return "";
+    try {
+      is_buffering_ =
+          event.substr(1, event.size() - 2) == "true" ? true : false;
+      is_buffering_callback_(is_buffering_);
+    } catch (...) {
+    }
     return "";
   });
   webview_->bind("isCompleted", [=](std::string event) -> std::string {
-    is_completed_ = event.substr(1, event.size() - 2) == "true" ? true : false;
-    is_completed_callback_(is_completed_);
-    if (is_completed_) Next();
+    if (event == "[null]") return "";
+    try {
+      is_completed_ =
+          event.substr(1, event.size() - 2) == "true" ? true : false;
+      is_completed_callback_(is_completed_);
+      if (is_completed_) Next();
+    } catch (...) {
+    }
     return "";
   });
   webview_->bind("position", [=](std::string event) -> std::string {
-    position_ = std::stoi(event.substr(1, event.size() - 2));
-    position_callback_(position_);
+    if (event == "[null]") return "";
+    try {
+      position_ = std::stoi(event.substr(1, event.size() - 2));
+      position_callback_(position_);
+    } catch (...) {
+    }
     return "";
   });
   webview_->bind("duration", [=](std::string event) -> std::string {
-    duration_ = std::stoi(event.substr(1, event.size() - 2));
-    duration_callback_(duration_);
+    if (event == "[null]") return "";
+    try {
+      duration_ = std::stoi(event.substr(1, event.size() - 2));
+      duration_callback_(duration_);
+    } catch (...) {
+    }
     return "";
   });
   webview_->bind("volume", [=](std::string event) -> std::string {
-    volume_ = std::stof(event.substr(1, event.size() - 2));
-    volume_callback_(volume_);
+    if (event == "[null]") return "";
+    try {
+      volume_ = std::stof(event.substr(1, event.size() - 2));
+      volume_callback_(volume_);
+    } catch (...) {
+    }
     return "";
   });
   webview_->bind("rate", [=](std::string event) -> std::string {
-    rate_ = std::stof(event.substr(1, event.size() - 2));
-    rate_callback_(rate_);
+    if (event == "[null]") return "";
+    try {
+      rate_ = std::stof(event.substr(1, event.size() - 2));
+      rate_callback_(rate_);
+    } catch (...) {
+    }
     return "";
   });
   webview_->navigate("file://" + source_);
