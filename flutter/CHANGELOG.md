@@ -1,3 +1,7 @@
+## 0.0.3
+
+- Fix unhandled `std::invalid_argument` on Linux.
+
 ## 0.0.2+2
 
 - Some leftover documentation.

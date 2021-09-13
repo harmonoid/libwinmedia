@@ -10,7 +10,7 @@
 ```yaml
 dependencies:
   ...
-  libwinmedia: ^0.0.1
+  libwinmedia: ^0.0.3
 ```
 
 ## Example
