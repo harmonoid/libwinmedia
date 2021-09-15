@@ -1,3 +1,7 @@
+## 0.0.4
+
+- Fix empty Player playlist navigation causing crash on Windows.
+
 ## 0.0.3
 
 - Fix unhandled `std::invalid_argument` on Linux.
