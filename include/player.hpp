@@ -70,6 +70,11 @@ class PlayerEvents {
     Internal::PlayerSetIndexEventHandler(id_, &PlayerEvents::OnIndex);
   }
 
+  void BufferingProgress(std::function<void(float)> listener) {
+    PlayerEvents::rate_ = listener;
+    Internal::PlayerSetRateEventHandler(id_, &PlayerEvents::OnRate);
+  }
+
  private:
   int32_t id_;
 
@@ -122,6 +127,12 @@ class PlayerEvents {
   static inline std::function<void(int32_t)> index_;
 
   static inline void OnIndex(int32_t value) { PlayerEvents::index_(value); }
+
+  static inline std::function<void(int32_t)> buffering_progress_;
+
+  static inline void OnBufferingProgress(int32_t value) {
+    PlayerEvents::buffering_progress_(value);
+  }
 
   friend class Player;
 };

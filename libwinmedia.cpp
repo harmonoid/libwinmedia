@@ -1064,6 +1064,8 @@ DLLEXPORT void PlayerSetIsBufferingEventHandler(
 #endif
 }
 
+// g_media_players.at(player_id).PlaybackSession().BufferingProgress();
+
 DLLEXPORT void PlayerSetVolumeEventHandler(int32_t player_id,
                                            void (*callback)(float volume)) {
 #ifdef _WIN32
@@ -1336,6 +1338,41 @@ DLLEXPORT void PlayerSetIndexEventHandler(int32_t player_id,
         (*callback)(index);
 #endif
       });
+#endif
+}
+
+DLLEXPORT void PlayerSetBufferingProgressEventHandler(int32_t player_id,
+                                                       void (*callback)(int32_t index)) {
+#ifdef _WIN32
+  g_media_players.at(player_id).PlaybackSession().BufferingProgressChanged(
+      [=](auto, const auto& args) -> void {
+#ifdef DART_VM
+        Dart_CObject player_id_object;
+        player_id_object.type = Dart_CObject_kInt32;
+        player_id_object.value.as_int32 = player_id;
+        Dart_CObject type_object;
+        type_object.type = Dart_CObject_kString;
+        type_object.value.as_string = "Duration";
+        Dart_CObject duration_object;
+        duration_object.type = Dart_CObject_kInt32;
+        duration_object.value.as_int32 = TO_MILLISECONDS(g_media_players.at(player_id)
+                                .PlaybackSession()
+                                .BufferingProgress());
+        Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                         &duration_object};
+        Dart_CObject return_object;
+        return_object.type = Dart_CObject_kArray;
+        return_object.value.as_array.length = 3;
+        return_object.value.as_array.values = value_objects;
+        g_dart_post_C_object(g_callback_port, &return_object);
+#else
+        (*callback)(TO_MILLISECONDS(
+            g_media_players.at(player_id).PlaybackSession().BufferingProgress()));
+#endif
+      });
+#elif __linux__
+  EnsureFuture(player_id);
+  // TODO : add linux support
 #endif
 }
 
