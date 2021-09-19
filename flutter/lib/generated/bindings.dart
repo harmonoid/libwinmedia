@@ -381,6 +381,20 @@ class LWM {
   late final _dart_PlayerIsLooping _PlayerIsLooping =
       _PlayerIsLooping_ptr.asFunction<_dart_PlayerIsLooping>();
 
+  bool PlayerIsAutoRepeat(
+    int player_id,
+  ) {
+    return _PlayerIsAutoRepeat(
+          player_id,
+        ) !=
+        0;
+  }
+
+  late final _PlayerIsAutoRepeat_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerIsAutoRepeat>>('PlayerIsAutoRepeat');
+  late final _dart_PlayerIsAutoRepeat _PlayerIsAutoRepeat =
+      _PlayerIsLooping_ptr.asFunction<_dart_PlayerIsAutoRepeat>();
+
   void PlayerSetIsPlayingEventHandler(
     int player_id,
     ffi.Pointer<ffi.NativeFunction<_typedefC_1>> callback,
@@ -1036,6 +1050,14 @@ typedef _c_PlayerIsLooping = ffi.Uint8 Function(
 );
 
 typedef _dart_PlayerIsLooping = int Function(
+  int player_id,
+);
+
+typedef _c_PlayerIsAutoRepeat = ffi.Uint8 Function(
+  ffi.Int32 player_id,
+);
+
+typedef _dart_PlayerIsAutoRepeat = int Function(
   int player_id,
 );
 
