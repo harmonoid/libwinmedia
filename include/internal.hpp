@@ -90,9 +90,6 @@ void PlayerSetDurationEventHandler(int32_t player_id,
 void PlayerSetIndexEventHandler(int32_t player_id,
                                 void (*callback)(int32_t index));
 
-void PlayerSetBufferingProgressEventHandler(int32_t player_id,
-                                void (*callback)(int32_t index));
-
 void PlayerNativeControlsCreate(int32_t player_id,
                                 void (*callback)(int32_t button));
 
