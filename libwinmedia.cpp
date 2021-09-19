@@ -780,7 +780,6 @@ DLLEXPORT float PlayerGetBufferingProgress(int32_t player_id) {
 #ifdef _WIN32
   return g_media_players.at(player_id).BufferingProgress();
 #elif __linux__
-  // TODO: Add Linux support.
   EnsureFuture(player_id);
   return g_media_players.at(player_id)->buffering_position();
 #endif
