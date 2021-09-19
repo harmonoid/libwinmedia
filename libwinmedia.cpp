@@ -732,6 +732,14 @@ DLLEXPORT void PlayerSetIsLooping(int32_t player_id, bool looping) {
 #endif
 }
 
+DLLEXPORT void PlayerSetAutoRepeat(int32_t player_id, bool enabled) {
+#ifdef _WIN32
+  g_media_playback_lists.at(player_id).AutoRepeatEnabled(enabled);
+#elif __linux__
+// TODO: Add Linux support.
+#endif
+}
+
 DLLEXPORT void PlayerSetIsShuffling(int32_t player_id, bool shuffling) {
 #ifdef _WIN32
   g_media_playback_lists.at(player_id).ShuffleEnabled(shuffling);
@@ -791,6 +799,14 @@ DLLEXPORT bool PlayerIsLooping(int32_t player_id) {
 #elif __linux__
   // TODO (alexmercerind): Add Linux support.
   return 0;
+#endif
+}
+
+DLLEXPORT void PlayerIsAutoRepeatEnabled(int32_t player_id) {
+#ifdef _WIN32
+  g_media_playback_lists.at(player_id).AutoRepeatEnabled();
+#elif __linux__
+// TODO: Add Linux support.
 #endif
 }
 

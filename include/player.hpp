@@ -192,6 +192,10 @@ class Player {
 
   void SetIsLooping(bool looping) { Internal::PlayerSetAutoplay(id_, looping); }
 
+  void SetAutoRepeat(bool autorepeat) {
+    Internal::PlayerSetAutoRepeat(id_, autorepeat);
+  }
+
   int32_t GetPosition() { return Internal::PlayerGetPosition(id_); }
 
   float GetVolume() { return Internal::PlayerGetVolume(id_); }
@@ -203,6 +207,8 @@ class Player {
   bool IsAutoplay() { return Internal::PlayerIsAutoplay(id_); }
 
   bool IsLooping() { return Internal::PlayerIsLooping(id_); }
+
+  bool IsAutoRepeat() { return Internal::PlayerIsAutoRepeatEnabled(id_); }
 
   void Dispose() { Internal::PlayerDispose(id_); }
 
