@@ -300,6 +300,21 @@ class LWM {
   late final _dart_PlayerSetIsLooping _PlayerSetIsLooping =
       _PlayerSetIsLooping_ptr.asFunction<_dart_PlayerSetIsLooping>();
 
+  void PlayerSetAutoRepeat(
+    int player_id,
+    bool enabled,
+  ) {
+    return _PlayerSetAutoRepeat(
+      player_id,
+      enabled ? 1 : 0,
+    );
+  }
+
+  late final _PlayerSetAutoRepeat_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerSetIsLooping>>('PlayerSetAutoRepeat');
+  late final _dart_PlayerSetIsLooping _PlayerSetAutoRepeat =
+      _PlayerSetAutoRepeat_ptr.asFunction<_dart_PlayerSetAutoRepeat>();
+
   int PlayerGetPosition(
     int player_id,
   ) {
@@ -1003,6 +1018,16 @@ typedef _c_PlayerSetIsLooping = ffi.Void Function(
 typedef _dart_PlayerSetIsLooping = void Function(
   int player_id,
   int looping,
+);
+
+typedef _c_PlayerSetAutoRepeat = ffi.Void Function(
+  ffi.Int32 player_id,
+  ffi.Uint8 enabled,
+);
+
+typedef _dart_PlayerSetAutoRepeat = void Function(
+  int player_id,
+  int enabled,
 );
 
 typedef _c_PlayerGetPosition = ffi.Int32 Function(

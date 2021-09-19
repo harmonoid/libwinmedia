@@ -255,6 +255,13 @@ class Player {
     );
   }
 
+  /// Current [autoRepeat] mode of [Player]
+  bool get autoRepeat {
+    return LWM.bindings.PlayerIsAutoRepeat(
+      id,
+    );
+  }
+
   /// Player Native Controls
   /// ----------------------
   /// These media controls show near the volume slider & on the lock screen in Windows 10.
@@ -434,6 +441,14 @@ class Player {
     LWM.bindings.PlayerSetIsLooping(
       id,
       isLooping,
+    );
+  }
+
+  /// Sets [autoRepeat] of the [Player]
+  set autoRepeat(bool enabled) {
+    LWM.bindings.PlayerSetAutoRepeat(
+      id,
+      enabled,
     );
   }
 }
