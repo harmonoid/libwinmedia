@@ -262,6 +262,20 @@ class Player {
     );
   }
 
+  /// Current [autoRepeat] mode of [Player]
+  bool get autoRepeat {
+    return LWM.bindings.PlayerIsAutoRepeat(
+      id,
+    );
+  }
+
+  /// Current [shuffleEnabled] mode of [Player]
+  bool get shuffleEnabled {
+    return LWM.bindings.PlayerIsShuffleEnabled(
+      id,
+    );
+  }
+
   /// Player Native Controls
   /// ----------------------
   /// These media controls show near the volume slider & on the lock screen in Windows 10.
@@ -441,6 +455,22 @@ class Player {
     LWM.bindings.PlayerSetIsLooping(
       id,
       isLooping,
+    );
+  }
+
+  /// Sets [autoRepeat] of the [Player]
+  set autoRepeat(bool enabled) {
+    LWM.bindings.PlayerSetAutoRepeat(
+      id,
+      enabled,
+    );
+  }
+
+  /// Sets [shuffleEnabled] of the [Player]
+  set shuffleEnabled(bool shuffling) {
+    LWM.bindings.PlayerSetIsShuffling(
+      id,
+      shuffling,
     );
   }
 }

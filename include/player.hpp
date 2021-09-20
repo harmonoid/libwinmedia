@@ -190,7 +190,15 @@ class Player {
     Internal::PlayerSetAutoplay(id_, autoplay);
   }
 
+  void SetShuffling(bool shuffling) {
+    Internal::PlayerSetIsShuffling(id_, shuffling);
+  }
+
   void SetIsLooping(bool looping) { Internal::PlayerSetAutoplay(id_, looping); }
+
+  void SetAutoRepeat(bool autorepeat) {
+    Internal::PlayerSetAutoRepeat(id_, autorepeat);
+  }
 
   int32_t GetPosition() { return Internal::PlayerGetPosition(id_); }
 
@@ -205,6 +213,10 @@ class Player {
   bool IsAutoplay() { return Internal::PlayerIsAutoplay(id_); }
 
   bool IsLooping() { return Internal::PlayerIsLooping(id_); }
+
+  bool IsAutoRepeat() { return Internal::PlayerIsAutoRepeatEnabled(id_); }
+
+  bool IsShuffling() { return Internal::PlayerIsShuffleEnabled(id_); }
 
   void Dispose() { Internal::PlayerDispose(id_); }
 

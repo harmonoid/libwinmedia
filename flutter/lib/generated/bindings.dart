@@ -300,6 +300,36 @@ class LWM {
   late final _dart_PlayerSetIsLooping _PlayerSetIsLooping =
       _PlayerSetIsLooping_ptr.asFunction<_dart_PlayerSetIsLooping>();
 
+  void PlayerSetIsShuffling(
+    int player_id,
+    bool shuffling,
+  ) {
+    return _PlayerSetIsShuffling(
+      player_id,
+      shuffling ? 1 : 0,
+    );
+  }
+
+  late final _PlayerSetIsShuffling_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerSetIsShuffling>>('PlayerSetIsShuffling');
+  late final _dart_PlayerSetIsShuffling _PlayerSetIsShuffling =
+      _PlayerSetIsShuffling_ptr.asFunction<_dart_PlayerSetIsShuffling>();
+
+  void PlayerSetAutoRepeat(
+    int player_id,
+    bool enabled,
+  ) {
+    return _PlayerSetAutoRepeat(
+      player_id,
+      enabled ? 1 : 0,
+    );
+  }
+
+  late final _PlayerSetAutoRepeat_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerSetIsLooping>>('PlayerSetAutoRepeat');
+  late final _dart_PlayerSetIsLooping _PlayerSetAutoRepeat =
+      _PlayerSetAutoRepeat_ptr.asFunction<_dart_PlayerSetAutoRepeat>();
+
   int PlayerGetPosition(
     int player_id,
   ) {
@@ -394,6 +424,34 @@ class LWM {
       _lookup<ffi.NativeFunction<_c_PlayerIsLooping>>('PlayerIsLooping');
   late final _dart_PlayerIsLooping _PlayerIsLooping =
       _PlayerIsLooping_ptr.asFunction<_dart_PlayerIsLooping>();
+
+  bool PlayerIsAutoRepeat(
+    int player_id,
+  ) {
+    return _PlayerIsAutoRepeat(
+          player_id,
+        ) !=
+        0;
+  }
+
+  late final _PlayerIsAutoRepeat_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerIsAutoRepeat>>('PlayerIsAutoRepeat');
+  late final _dart_PlayerIsAutoRepeat _PlayerIsAutoRepeat =
+      _PlayerIsLooping_ptr.asFunction<_dart_PlayerIsAutoRepeat>();
+
+  bool PlayerIsShuffleEnabled(
+    int player_id,
+  ) {
+    return _PlayerIsShuffleEnabled(
+          player_id,
+        ) !=
+        0;
+  }
+
+  late final _PlayerIsShuffleEnabled_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerIsShuffleEnabled>>('PlayerIsShuffleEnabled');
+  late final _dart_PlayerIsShuffleEnabled _PlayerIsShuffleEnabled =
+      _PlayerIsLooping_ptr.asFunction<_dart_PlayerIsShuffleEnabled>();
 
   void PlayerSetIsPlayingEventHandler(
     int player_id,
@@ -1005,6 +1063,26 @@ typedef _dart_PlayerSetIsLooping = void Function(
   int looping,
 );
 
+typedef _c_PlayerSetIsShuffling = ffi.Void Function(
+  ffi.Int32 player_id,
+  ffi.Uint8 shuffling,
+);
+
+typedef _dart_PlayerSetIsShuffling = void Function(
+  int player_id,
+  int shuffling,
+);
+
+typedef _c_PlayerSetAutoRepeat = ffi.Void Function(
+  ffi.Int32 player_id,
+  ffi.Uint8 enabled,
+);
+
+typedef _dart_PlayerSetAutoRepeat = void Function(
+  int player_id,
+  int enabled,
+);
+
 typedef _c_PlayerGetPosition = ffi.Int32 Function(
   ffi.Int32 player_id,
 );
@@ -1060,6 +1138,23 @@ typedef _c_PlayerIsLooping = ffi.Uint8 Function(
 typedef _dart_PlayerIsLooping = int Function(
   int player_id,
 );
+
+typedef _c_PlayerIsAutoRepeat = ffi.Uint8 Function(
+  ffi.Int32 player_id,
+);
+
+typedef _dart_PlayerIsAutoRepeat = int Function(
+  int player_id,
+);
+
+typedef _c_PlayerIsShuffleEnabled = ffi.Uint8 Function(
+  ffi.Int32 player_id,
+);
+
+typedef _dart_PlayerIsShuffleEnabled = int Function(
+  int player_id,
+);
+
 
 typedef _typedefC_1 = ffi.Void Function(
   ffi.Uint8,
