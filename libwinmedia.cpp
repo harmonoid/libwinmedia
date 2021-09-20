@@ -802,11 +802,21 @@ DLLEXPORT bool PlayerIsLooping(int32_t player_id) {
 #endif
 }
 
-DLLEXPORT void PlayerIsAutoRepeatEnabled(int32_t player_id) {
+DLLEXPORT bool PlayerIsAutoRepeatEnabled(int32_t player_id) {
 #ifdef _WIN32
-  g_media_playback_lists.at(player_id).AutoRepeatEnabled();
+  return g_media_playback_lists.at(player_id).AutoRepeatEnabled();
 #elif __linux__
 // TODO: Add Linux support.
+  return 0;
+#endif
+}
+
+DLLEXPORT bool PlayerIsShuffleEnabled(int32_t player_id) {
+#ifdef _WIN32
+  return g_media_playback_lists.at(player_id).ShuffleEnabled();
+#elif __linux__
+// TODO: Add Linux support.
+  return 0;
 #endif
 }
 

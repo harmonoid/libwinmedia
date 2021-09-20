@@ -55,6 +55,8 @@ void PlayerSetIsLooping(int32_t player_id, bool looping);
 
 void PlayerSetAutoRepeat(int32_t player_id, bool enabled);
 
+void PlayerSetIsShuffling(int32_t player_id, bool shuffling);
+
 int32_t PlayerGetPosition(int32_t player_id);
 
 float PlayerGetVolume(int32_t player_id);
@@ -68,6 +70,8 @@ bool PlayerIsAutoplay(int32_t player_id);
 bool PlayerIsLooping(int32_t player_id);
 
 bool PlayerIsAutoRepeatEnabled(int32_t player_id);
+
+bool PlayerIsShuffleEnabled(int32_t player_id);
 
 void PlayerSetIsPlayingEventHandler(int32_t player_id,
                                     void (*callback)(bool is_playing));
