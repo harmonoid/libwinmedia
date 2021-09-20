@@ -776,6 +776,15 @@ DLLEXPORT float PlayerGetAudioBalance(int32_t player_id) {
 #endif
 }
 
+DLLEXPORT float PlayerGetBufferingProgress(int32_t player_id) {
+#ifdef _WIN32
+  return g_media_players.at(player_id).BufferingProgress();
+#elif __linux__
+  EnsureFuture(player_id);
+  return g_media_players.at(player_id)->buffering_position();
+#endif
+}
+
 DLLEXPORT bool PlayerIsAutoplay(int32_t player_id) {
 #ifdef _WIN32
   return g_media_players.at(player_id).AutoPlay();

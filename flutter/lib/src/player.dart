@@ -241,6 +241,13 @@ class Player {
     );
   }
 
+  /// Current [bufferingProgress] of the [Player]
+  double get bufferingProgress {
+    return LWM.bindings.PlayerGetBufferingProgress(
+      id
+    );
+  }
+
   /// Current [autoplay] mode of the [Player].
   bool get autoplay {
     return LWM.bindings.PlayerIsAutoplay(

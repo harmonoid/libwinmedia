@@ -23,6 +23,7 @@ class Player {
   bool is_completed() const { return is_completed_; }
   int32_t position() const { return position_; }
   int32_t duration() const { return duration_; }
+  int32_t buffering_position() const { return buffering_position_; }
   float volume() const { return volume_; }
   float rate() const { return rate_; }
   int32_t index() const { return index_; }
@@ -86,6 +87,7 @@ class Player {
   bool is_completed_ = false;
   int32_t position_ = 0;
   int32_t duration_ = 0;
+  int32_t buffering_position_ = 0;
   float volume_ = 0.0;
   float rate_ = 0.0;
   std::function<void(bool)> is_playing_callback_ = [](bool) {};
@@ -93,6 +95,7 @@ class Player {
   std::function<void(bool)> is_completed_callback_ = [](bool) {};
   std::function<void(int32_t)> position_callback_ = [](int32_t) {};
   std::function<void(int32_t)> duration_callback_ = [](int32_t) {};
+  std::function<void(int32_t)> buffering_callback_ = [](int32_t) {};
   std::function<void(float)> volume_callback_ = [](float) {};
   std::function<void(float)> rate_callback_ = [](float) {};
   std::function<void(int32_t)> index_callback_ = [](int32_t) {};
@@ -145,7 +148,13 @@ class Player {
       "       isBuffering(true);"
       "   });"
       "   player.addEventListener('timeupdate', (event) => {"
-      "       position(Math.round(event.target.currentTime * 1000));"
+      "       position(Math.round(event.target.currentTime * 1000));" 
+      "   });"
+      "   player.addEventListener('progress' (event) => {"
+      "       var duration = myAudio.duration; " 
+      "       if (myAudio.buffered.length > 0) { " 
+      "           buffering(myAudio.buffered.end(myAudio.buffered.length - 1) * 1000);"
+      "       } " 
       "   });"
       "   player.addEventListener('durationchange', (event) => {"
       "       duration(Math.round(event.target.duration * 1000));"
@@ -220,6 +229,15 @@ Player::Player(int32_t id, bool show_window = false,
     try {
       duration_ = std::stoi(event.substr(1, event.size() - 2));
       duration_callback_(duration_);
+    } catch (...) {
+    }
+    return "";
+  });
+  webview_->bind("buffering", [=](std::string event) -> std::string {
+    if (event == "[null]") return "";
+    try {
+      buffering_position_ = std::stoi(event.substr(1, event.size() - 2));
+      buffering_callback_(buffering_position_);
     } catch (...) {
     }
     return "";
