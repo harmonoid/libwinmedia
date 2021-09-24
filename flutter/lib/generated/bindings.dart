@@ -383,19 +383,19 @@ class LWM {
   late final _dart_PlayerGetAudioBalance _PlayerGetAudioBalance =
       _PlayerGetAudioBalance_ptr.asFunction<_dart_PlayerGetAudioBalance>();
 
-  double PlayerGetBufferingProgress(
+  double? PlayerGetDownloadProgress(
     int player_id,
   ) {
-    return _PlayerGetBufferingProgress(
+    return _PlayerGetDownloadProgress(
       player_id,
     );
   }
 
-  late final _PlayerGetBufferingProgress_ptr =
-      _lookup<ffi.NativeFunction<_c_PlayerGetBufferingProgress>>(
-          'PlayerGetBufferingProgress');
-  late final _dart_PlayerGetBufferingProgress _PlayerGetBufferingProgress =
-      _PlayerGetBufferingProgress_ptr.asFunction<_dart_PlayerGetBufferingProgress>();
+  late final _PlayerGetDownloadProgress_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerGetDownloadProgress>>(
+          'PlayerGetDownloadProgress');
+  late final _dart_PlayerGetDownloadProgress _PlayerGetDownloadProgress =
+      _PlayerGetDownloadProgress_ptr.asFunction<_dart_PlayerGetDownloadProgress>();
 
   bool PlayerIsAutoplay(
     int player_id,
@@ -1115,11 +1115,11 @@ typedef _dart_PlayerGetAudioBalance = double Function(
   int player_id,
 );
 
-typedef _c_PlayerGetBufferingProgress = ffi.Float Function(
+typedef _c_PlayerGetDownloadProgress = ffi.Float Function(
   ffi.Int32 player_id,
 );
 
-typedef _dart_PlayerGetBufferingProgress = double Function(
+typedef _dart_PlayerGetDownloadProgress = double? Function(
   int player_id,
 );
 

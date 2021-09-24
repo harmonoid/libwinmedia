@@ -241,9 +241,9 @@ class Player {
     );
   }
 
-  /// Current [bufferingProgress] of the [Player]
-  double get bufferingProgress {
-    return LWM.bindings.PlayerGetBufferingProgress(
+  /// Current [downloadProgress] of the [Player]
+  double? get downloadProgress {
+    return LWM.bindings.PlayerGetDownloadProgress(
       id
     );
   }
