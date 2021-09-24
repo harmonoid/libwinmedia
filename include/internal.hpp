@@ -65,7 +65,7 @@ float PlayerGetRate(int32_t player_id);
 
 float PlayerGetAudioBalance(int32_t player_id);
 
-float PlayerGetBufferingProgress(int32_t player_id);
+float PlayerGetDownloadProgress(int32_t player_id);
 
 bool PlayerIsAutoplay(int32_t player_id);
 
