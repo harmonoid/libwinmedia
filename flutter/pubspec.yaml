@@ -1,6 +1,6 @@
 name: libwinmedia
 description: A cross-platform media playback library for C/C++ & Flutter with good number of features.
-version: 0.0.4
+version: 0.0.6
 homepage: https://github.com/harmonoid/libwinmedia
 repository: https://github.com/harmonoid/libwinmedia
 

@@ -1,3 +1,12 @@
+## 0.0.6
+
+- Other changes.
+
+## 0.0.5
+
+- Add `AutoRepeat` and `Shuffle`. (Thanks to @bdlukaa)
+- Add buffering position. (Thanks to @bdlukaa)
+
 ## 0.0.4
 
 - Fix empty Player playlist navigation causing crash on Windows.
