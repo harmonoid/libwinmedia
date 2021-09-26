@@ -208,7 +208,9 @@ class Player {
 
   float GetAudioBalance() { return Internal::PlayerGetAudioBalance(id_); }
 
-  float GetBufferingProgress() { return Internal::PlayerGetBufferingProgress(id_); }
+  float GetDownloadProgress() {
+    return Internal::PlayerGetDownloadProgress(id_);
+  }
 
   bool IsAutoplay() { return Internal::PlayerIsAutoplay(id_); }
 

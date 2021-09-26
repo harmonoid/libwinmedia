@@ -815,7 +815,7 @@ DLLEXPORT bool PlayerIsAutoRepeatEnabled(int32_t player_id) {
 #ifdef _WIN32
   return g_media_playback_lists.at(player_id).AutoRepeatEnabled();
 #elif __linux__
-// TODO: Add Linux support.
+  // TODO: Add Linux support.
   return 0;
 #endif
 }
@@ -824,7 +824,7 @@ DLLEXPORT bool PlayerIsShuffleEnabled(int32_t player_id) {
 #ifdef _WIN32
   return g_media_playback_lists.at(player_id).ShuffleEnabled();
 #elif __linux__
-// TODO: Add Linux support.
+  // TODO: Add Linux support.
   return 0;
 #endif
 }
@@ -832,30 +832,28 @@ DLLEXPORT bool PlayerIsShuffleEnabled(int32_t player_id) {
 // TODO (alexmercerind): Implement frame callbacks.
 // Windows:
 // Current summary:
-// Tried calling `CopyFrameToVideoSurface` directly upon IDirect3DSurface, which
-// results in accessing invalid memory location.
-// Later on tried using win2D from NuGet, but it results in class not
-// registered.
+// * Tried calling `CopyFrameToVideoSurface` directly upon IDirect3DSurface,
+// which results in accessing invalid memory location.
+// * Later on tried using win2D from NuGet, but it results in "class not
+// registered".
 //
-// DLLEXPORT void PlayerSetFrameEventHandler(
-//     int32_t player_id, void (*callback)(uint8_t* buffer, int32_t size,
-//                                         int32_t width, int32_t height)) {
-//   g_media_players.at(player_id).IsVideoFrameServerEnabled(true);
-//   winrt::Microsoft::Graphics::Canvas::CanvasDevice canvasDevice =
-//       winrt::Microsoft::Graphics::Canvas::CanvasDevice::GetSharedDevice();
-//   SoftwareBitmap bitmap = SoftwareBitmap(BitmapPixelFormat::Rgba8, 480, 360,
-//                                          BitmapAlphaMode::Ignore);
-//   winrt::Microsoft::Graphics::Canvas::CanvasBitmap surface =
-//       winrt::Microsoft::Graphics::Canvas::CanvasBitmap::
-//           CreateFromSoftwareBitmap(canvasDevice, bitmap);
-//   g_media_players.at(player_id).VideoFrameAvailable([=](auto,
-//                                                   const auto& args) -> void {
-//     g_media_players.at(player_id).CopyFrameToVideoSurface(surface);
-//     (*callback)(surface.GetPixelBytes().data(),
-//     surface.GetPixelBytes().size(),
-//                 bitmap.PixelWidth(), bitmap.PixelHeight());
-//   });
-// }
+IDirect3DSurface surface = IDirect3DSurface();
+Streams::IBuffer buffer = Streams::IBuffer();
+
+DLLEXPORT void PlayerSetFrameEventHandler(
+    int32_t player_id, void (*callback)(uint8_t* buffer, int32_t size,
+                                        int32_t width, int32_t height)) {
+  g_media_players.at(player_id).IsVideoFrameServerEnabled(true);
+  g_media_players.at(player_id)
+      .VideoFrameAvailable([=](auto, const auto& args) -> void {
+        g_media_players.at(player_id).CopyFrameToVideoSurface(surface);
+        SoftwareBitmap bitmap =
+            SoftwareBitmap::CreateCopyFromSurfaceAsync(surface).get();
+        bitmap.CopyToBuffer(buffer);
+        (*callback)(buffer.data(), buffer.Length(), bitmap.PixelWidth(),
+                    bitmap.PixelHeight());
+      });
+}
 
 DLLEXPORT void PlayerSetIsPlayingEventHandler(
     int32_t player_id, void (*callback)(bool is_playing)) {

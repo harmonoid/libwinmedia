@@ -75,6 +75,11 @@ bool PlayerIsAutoRepeatEnabled(int32_t player_id);
 
 bool PlayerIsShuffleEnabled(int32_t player_id);
 
+void PlayerSetFrameEventHandler(int32_t player_id,
+                                void (*callback)(uint8_t* buffer, int32_t size,
+                                                 int32_t width,
+                                                 int32_t height));
+
 void PlayerSetIsPlayingEventHandler(int32_t player_id,
                                     void (*callback)(bool is_playing));
 
