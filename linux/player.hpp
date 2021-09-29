@@ -150,7 +150,7 @@ class Player {
       "   player.addEventListener('timeupdate', (event) => {"
       "       position(Math.round(event.target.currentTime * 1000));" 
       "   });"
-      "   player.addEventListener('progress' (event) => {"
+      "   player.addEventListener('progress', (event) => {"
       "       var duration = myAudio.duration; " 
       "       if (myAudio.buffered.length > 0) { " 
       "           buffering(myAudio.buffered.end(myAudio.buffered.length - 1) * 1000);"
