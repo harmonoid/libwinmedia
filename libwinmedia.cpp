@@ -730,7 +730,7 @@ DLLEXPORT void PlayerSetIsLooping(int32_t player_id, bool looping) {
 #endif
 }
 
-DLLEXPORT void PlayerSetAutoRepeat(int32_t player_id, bool enabled) {
+DLLEXPORT void PlayerSetIsAutoRepeat(int32_t player_id, bool enabled) {
 #ifdef _WIN32
   g_media_playback_lists.at(player_id).AutoRepeatEnabled(enabled);
 #elif __linux__
@@ -1366,8 +1366,8 @@ DLLEXPORT void PlayerSetIndexEventHandler(int32_t player_id,
 DLLEXPORT void PlayerSetDownloadProgressEventHandler(
     int32_t player_id, void (*callback)(float download_progress)) {
 #ifdef _WIN32
-  g_media_players.at(player_id)
-      .PlaybackSession().DownloadProgressChanged([=](auto, const auto& args) -> void {
+  g_media_players.at(player_id).PlaybackSession().DownloadProgressChanged(
+      [=](auto, const auto& args) -> void {
 #ifdef DART_VM
         Dart_CObject player_id_object;
         player_id_object.type = Dart_CObject_kInt32;
@@ -1389,6 +1389,7 @@ DLLEXPORT void PlayerSetDownloadProgressEventHandler(
 #else
         (*callback)(
             g_media_players.at(player_id).PlaybackSession().DownloadProgress());
+
 #endif
       });
 #elif __linux__
@@ -1424,16 +1425,17 @@ DLLEXPORT void PlayerSetErrorEventHandler(int32_t player_id,
                                          &error_message_object};
         Dart_CObject return_object;
         return_object.type = Dart_CObject_kArray;
-        return_object.value.as_array.length = 3;
+        return_object.value.as_array.length = 4;
         return_object.value.as_array.values = value_objects;
         g_dart_post_C_object(g_callback_port, &return_object);
 #else
         (*callback)(static_cast<int32_t>(args.Error()), error_ptr);
+
 #endif
+      });
 #elif __linux__
 // TODO (alexmercerind): Add Linux support.
 #endif
-      });
 }
 
 // TODO (alexmercerind): Add native controls, tag & media parsing on Linux.

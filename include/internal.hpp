@@ -53,7 +53,7 @@ void PlayerSetAutoplay(int32_t player_id, bool autoplay);
 
 void PlayerSetIsLooping(int32_t player_id, bool looping);
 
-void PlayerSetAutoRepeat(int32_t player_id, bool enabled);
+void PlayerSetIsAutoRepeat(int32_t player_id, bool enabled);
 
 void PlayerSetIsShuffling(int32_t player_id, bool shuffling);
 
