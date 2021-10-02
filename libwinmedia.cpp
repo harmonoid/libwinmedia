@@ -1,7 +1,7 @@
 /*
  * libwinmedia
  * -----------
- * v0.0.2
+ * v0.0.3
  * A cross-platform media playback library for C/C++ with good number of
  * features.
  *
@@ -326,8 +326,6 @@ DLLEXPORT void PlayerCreate(int32_t player_id, bool show_window = false,
         std::make_unique<Player>(player_id, show_window, window_title)));
     g_media_players_promises.at(player_id).set_value();
   });
-// TODO (alexmercerind): This is not safe, ensure callback invoke before any
-// other Player API calls.
 #endif
 }
 
@@ -811,20 +809,20 @@ DLLEXPORT bool PlayerIsLooping(int32_t player_id) {
 #endif
 }
 
-DLLEXPORT bool PlayerIsAutoRepeatEnabled(int32_t player_id) {
+DLLEXPORT bool PlayerIsAutoRepeat(int32_t player_id) {
 #ifdef _WIN32
   return g_media_playback_lists.at(player_id).AutoRepeatEnabled();
 #elif __linux__
-// TODO: Add Linux support.
+  // TODO: Add Linux support.
   return 0;
 #endif
 }
 
-DLLEXPORT bool PlayerIsShuffleEnabled(int32_t player_id) {
+DLLEXPORT bool PlayerIsShuffling(int32_t player_id) {
 #ifdef _WIN32
   return g_media_playback_lists.at(player_id).ShuffleEnabled();
 #elif __linux__
-// TODO: Add Linux support.
+  // TODO: Add Linux support.
   return 0;
 #endif
 }
@@ -1363,6 +1361,79 @@ DLLEXPORT void PlayerSetIndexEventHandler(int32_t player_id,
 #endif
       });
 #endif
+}
+
+DLLEXPORT void PlayerSetDownloadProgressEventHandler(
+    int32_t player_id, void (*callback)(float download_progress)) {
+#ifdef _WIN32
+  g_media_players.at(player_id)
+      .PlaybackSession().DownloadProgressChanged([=](auto, const auto& args) -> void {
+#ifdef DART_VM
+        Dart_CObject player_id_object;
+        player_id_object.type = Dart_CObject_kInt32;
+        player_id_object.value.as_int32 = player_id;
+        Dart_CObject type_object;
+        type_object.type = Dart_CObject_kString;
+        type_object.value.as_string = "DownloadProgress";
+        Dart_CObject download_progress_object;
+        download_progress_object.type = Dart_CObject_kDouble;
+        download_progress_object.value.as_double = static_cast<double>(
+            g_media_players.at(player_id).PlaybackSession().DownloadProgress());
+        Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                         &download_progress_object};
+        Dart_CObject return_object;
+        return_object.type = Dart_CObject_kArray;
+        return_object.value.as_array.length = 3;
+        return_object.value.as_array.values = value_objects;
+        g_dart_post_C_object(g_callback_port, &return_object);
+#else
+        (*callback)(
+            g_media_players.at(player_id).PlaybackSession().DownloadProgress());
+#endif
+      });
+#elif __linux__
+// TODO (alexmercerind): Add Linux support.
+#endif
+}
+
+DLLEXPORT void PlayerSetErrorEventHandler(int32_t player_id,
+                                          void (*callback)(int32_t code,
+                                                           char* message)) {
+#ifdef _WIN32
+  g_media_players.at(player_id).MediaFailed(
+      [=](auto, const Playback::MediaPlayerFailedEventArgs& args) -> void {
+        winrt::hstring error = args.ErrorMessage();
+        std::string error_str =
+            TO_STRING(std::wstring(error.begin(), error.end()));
+        char* error_ptr = const_cast<char*>(error_str.c_str());
+#ifdef DART_VM
+        Dart_CObject player_id_object;
+        player_id_object.type = Dart_CObject_kInt32;
+        player_id_object.value.as_int32 = player_id;
+        Dart_CObject type_object;
+        type_object.type = Dart_CObject_kString;
+        type_object.value.as_string = "Error";
+        Dart_CObject error_code_object;
+        error_code_object.type = Dart_CObject_kInt32;
+        error_code_object.value.as_int32 = static_cast<int32_t>(args.Error());
+        Dart_CObject error_message_object;
+        error_message_object.type = Dart_CObject_kString;
+        error_message_object.value.as_string = error_ptr;
+        Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                         &error_code_object,
+                                         &error_message_object};
+        Dart_CObject return_object;
+        return_object.type = Dart_CObject_kArray;
+        return_object.value.as_array.length = 3;
+        return_object.value.as_array.values = value_objects;
+        g_dart_post_C_object(g_callback_port, &return_object);
+#else
+        (*callback)(static_cast<int32_t>(args.Error()), error_ptr);
+#endif
+#elif __linux__
+// TODO (alexmercerind): Add Linux support.
+#endif
+      });
 }
 
 // TODO (alexmercerind): Add native controls, tag & media parsing on Linux.

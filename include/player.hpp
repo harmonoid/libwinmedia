@@ -12,6 +12,14 @@ extern "C" {
 
 namespace lwm {
 
+enum PlayerErrorCode {
+  unknown,
+  aborted,
+  networkError,
+  decodingError,
+  sourceNotSupported
+};
+
 class Player;
 
 class PlayerEvents {
@@ -70,6 +78,17 @@ class PlayerEvents {
     Internal::PlayerSetIndexEventHandler(id_, &PlayerEvents::OnIndex);
   }
 
+  void DownloadProgress(std::function<void(float)> listener) {
+    PlayerEvents::download_progress_ = listener;
+    Internal::PlayerSetDownloadProgressEventHandler(
+        id_, &PlayerEvents::OnDownloadProgress);
+  }
+
+  void Error(std::function<void(PlayerErrorCode, std::string)> listener) {
+    PlayerEvents::error_ = listener;
+    Internal::PlayerSetErrorEventHandler(id_, &PlayerEvents::OnError);
+  }
+
  private:
   int32_t id_;
 
@@ -122,6 +141,19 @@ class PlayerEvents {
   static inline std::function<void(int32_t)> index_;
 
   static inline void OnIndex(int32_t value) { PlayerEvents::index_(value); }
+
+  static inline std::function<void(float)> download_progress_;
+
+  static inline void OnDownloadProgress(float value) {
+    PlayerEvents::download_progress_(value);
+  }
+
+  static inline std::function<void(PlayerErrorCode, std::string)> error_;
+
+  static inline void OnError(int32_t code, char* error) {
+    PlayerEvents::error_(static_cast<PlayerErrorCode>(code),
+                         std::string(error));
+  }
 
   friend class Player;
 };
@@ -208,15 +240,17 @@ class Player {
 
   float GetAudioBalance() { return Internal::PlayerGetAudioBalance(id_); }
 
-  float GetBufferingProgress() { return Internal::PlayerGetBufferingProgress(id_); }
+  float PlayerGetDownloadProgress() {
+    return Internal::PlayerGetDownloadProgress(id_);
+  }
 
   bool IsAutoplay() { return Internal::PlayerIsAutoplay(id_); }
 
   bool IsLooping() { return Internal::PlayerIsLooping(id_); }
 
-  bool IsAutoRepeat() { return Internal::PlayerIsAutoRepeatEnabled(id_); }
+  bool IsAutoRepeat() { return Internal::PlayerIsAutoRepeat(id_); }
 
-  bool IsShuffling() { return Internal::PlayerIsShuffleEnabled(id_); }
+  bool IsShuffling() { return Internal::PlayerIsShuffling(id_); }
 
   void Dispose() { Internal::PlayerDispose(id_); }
 

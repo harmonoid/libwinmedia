@@ -71,9 +71,9 @@ bool PlayerIsAutoplay(int32_t player_id);
 
 bool PlayerIsLooping(int32_t player_id);
 
-bool PlayerIsAutoRepeatEnabled(int32_t player_id);
+bool PlayerIsAutoRepeat(int32_t player_id);
 
-bool PlayerIsShuffleEnabled(int32_t player_id);
+bool PlayerIsShuffling(int32_t player_id);
 
 void PlayerSetIsPlayingEventHandler(int32_t player_id,
                                     void (*callback)(bool is_playing));
@@ -97,6 +97,12 @@ void PlayerSetDurationEventHandler(int32_t player_id,
 
 void PlayerSetIndexEventHandler(int32_t player_id,
                                 void (*callback)(int32_t index));
+
+void PlayerSetDownloadProgressEventHandler(
+    int32_t player_id, void (*callback)(float download_progress));
+
+void PlayerSetErrorEventHandler(int32_t player_id,
+                                void (*callback)(int32_t code, char* message));
 
 void PlayerNativeControlsCreate(int32_t player_id,
                                 void (*callback)(int32_t button));
