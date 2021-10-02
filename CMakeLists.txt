@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 set(PROJECT_NAME libwinmedia)
-set(VERSION 0.0.2)
+set(VERSION 0.0.3)
 set(CPPWINRT_VERSION 2.0.210806.1)
 project(${PROJECT_NAME} LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
