@@ -1,12 +1,6 @@
 <h1 align="center"><a href="https://github.com/libwinmedia/libwinmedia">libwinmedia</a></h1>
 <h4 align="center">A cross-platform media playback library for C/C++ & Flutter with good number of features.</h4>
 
-## Bindings
-
-- [just_audio](https://pub.dev/packages/just_audio): Cross platform audio playback library for Flutter, working on Android, iOS, macOS, Windows, Linux & Web.
-- [libwinmedia-py](https://github.com/libwinmedia/libwinmedia-py): libwinmedia bindings for Python.
-- [libwinmedia.dart](https://pub.dev/packages/libwinmedia): libwinmedia bindings for Flutter.
-
 ## Example
 
 A very simple example can be as follows.
@@ -82,6 +76,12 @@ void demo() {
   );
 }
 ```
+
+## Bindings
+
+- [just_audio](https://pub.dev/packages/just_audio): Cross platform audio playback library for Flutter, working on Android, iOS, macOS, Windows, Linux & Web.
+- [libwinmedia-py](https://github.com/libwinmedia/libwinmedia-py): libwinmedia bindings for Python.
+- [libwinmedia.dart](https://pub.dev/packages/libwinmedia): libwinmedia bindings for Flutter.
 
 ## Support
 
