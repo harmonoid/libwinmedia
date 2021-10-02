@@ -1,3 +1,15 @@
+## 0.0.7
+
+- Add `player.streams.downloadProgress` & `Player.streams.error`.
+
+## 0.0.6
+
+- Auto repeat, shuffle & download progress getter/setters (thanks to @bdlukaa).
+
+## 0.0.5
+
+- Other changes
+
 ## 0.0.4
 
 - Fix empty Player playlist navigation causing crash on Windows.

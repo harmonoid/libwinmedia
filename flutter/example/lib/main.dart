@@ -23,6 +23,7 @@ class _MyAppState extends State<MyApp> {
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
   String uri = '';
+  double downloadProgress = 0.0;
   @override
   void initState() {
     super.initState();
@@ -53,6 +54,13 @@ class _MyAppState extends State<MyApp> {
     player.streams.position.listen((event) {
       position = event;
       setState(() {});
+    });
+    player.streams.downloadProgress.listen((event) {
+      downloadProgress = event;
+      setState(() {});
+    });
+    player.streams.error.listen((event) {
+      print(event);
     });
   }
 
@@ -110,12 +118,12 @@ class _MyAppState extends State<MyApp> {
                                 hintStyle: TextStyle(
                                   fontSize: 14.0,
                                 ),
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(width: 1.0),
+                                border: UnderlineInputBorder(
+                                  borderSide: BorderSide(width: 2.0),
                                 ),
-                                focusedBorder: OutlineInputBorder(
+                                focusedBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
-                                    width: 1.0,
+                                    width: 2.0,
                                     color: Theme.of(context).primaryColor,
                                   ),
                                 ),
@@ -290,6 +298,10 @@ class _MyAppState extends State<MyApp> {
                             DataCell(Text('$isCompleted')),
                           ]),
                           DataRow(cells: [
+                            DataCell(Text('player.state.downloadProgress')),
+                            DataCell(Text('$downloadProgress')),
+                          ]),
+                          DataRow(cells: [
                             DataCell(Text('player.volume')),
                             DataCell(Text('$volume')),
                           ]),
@@ -298,6 +310,13 @@ class _MyAppState extends State<MyApp> {
                             DataCell(Text('$rate')),
                           ]),
                         ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        'Other event streams have not been shown in the example.',
+                        style: TextStyle(color: Colors.black.withOpacity(0.67)),
                       ),
                     ),
                   ],

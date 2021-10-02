@@ -34,3 +34,6 @@ void intC(int _) {}
 
 /// A template function to call few functions exposed by the `libwinmedia.dll`, never gets invoked.
 void doubleC(double _) {}
+
+/// A template function to call few functions exposed by the `libwinmedia.dll`, never gets invoked.
+void errorC(int _, Pointer<Utf8> __) {}

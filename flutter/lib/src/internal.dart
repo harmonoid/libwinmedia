@@ -100,6 +100,23 @@ abstract class LWM {
               players[id]!.state.index = event[2];
               break;
             }
+          case 'DownloadProgress':
+            {
+              players[id]!.streams.downloadProgressController.add(
+                    event[2],
+                  );
+              players[id]!.state.downloadProgress = event[2];
+              break;
+            }
+          case 'Error':
+            {
+              var error = PlayerError(event[2], event[3]);
+              players[id]!.streams.errorController.add(
+                    error,
+                  );
+              players[id]!.state.error = error;
+              break;
+            }
           default:
             break;
         }

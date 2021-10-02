@@ -206,6 +206,14 @@ class Player {
       id,
       Pointer.fromFunction(intC),
     );
+    LWM.bindings.PlayerSetDownloadProgressEventHandler(
+      id,
+      Pointer.fromFunction(doubleC),
+    );
+    LWM.bindings.PlayerSetErrorEventHandler(
+      id,
+      Pointer.fromFunction(errorC),
+    );
   }
 
   /// Unique [id] associated with the [Player].
@@ -241,11 +249,9 @@ class Player {
     );
   }
 
-  /// Current [downloadProgress] of the [Player]
+  /// Current [downloadProgress] of the [Player].
   double? get downloadProgress {
-    return LWM.bindings.PlayerGetDownloadProgress(
-      id
-    );
+    return LWM.bindings.PlayerGetDownloadProgress(id);
   }
 
   /// Current [autoplay] mode of the [Player].
@@ -262,16 +268,16 @@ class Player {
     );
   }
 
-  /// Current [autoRepeat] mode of [Player]
-  bool get autoRepeat {
+  /// If the auto repeat is enabled.
+  bool get isAutoRepeat {
     return LWM.bindings.PlayerIsAutoRepeat(
       id,
     );
   }
 
-  /// Current [shuffleEnabled] mode of [Player]
-  bool get shuffleEnabled {
-    return LWM.bindings.PlayerIsShuffleEnabled(
+  /// If the shuffle is enabled.
+  bool get isShuffling {
+    return LWM.bindings.PlayerIsShuffling(
       id,
     );
   }
@@ -458,16 +464,16 @@ class Player {
     );
   }
 
-  /// Sets [autoRepeat] of the [Player]
-  set autoRepeat(bool enabled) {
-    LWM.bindings.PlayerSetAutoRepeat(
+  /// Sets [isAutoRepeat] of the [Player]
+  set isAutoRepeat(bool autoRepeat) {
+    LWM.bindings.PlayerSetIsAutoRepeat(
       id,
-      enabled,
+      autoRepeat,
     );
   }
 
-  /// Sets [shuffleEnabled] of the [Player]
-  set shuffleEnabled(bool shuffling) {
+  /// Sets [isShuffling] of the [Player]
+  set isShuffling(bool shuffling) {
     LWM.bindings.PlayerSetIsShuffling(
       id,
       shuffling,
@@ -497,6 +503,12 @@ class _PlayerState {
 
   /// Index of the currently playing [Media] in the queue.
   int index = 0;
+
+  /// Download progress of the currently playing [Media].
+  double downloadProgress = 0.0;
+
+  /// Occured error in the [Player].
+  PlayerError? error;
 }
 
 /// Private class for event handling of [Player].
@@ -522,6 +534,12 @@ class _PlayerStreams {
   /// Index of the currently playing [Media] in the queue.
   late Stream<int> index;
 
+  /// Download progress of the currently playing [Media].
+  late Stream<double> downloadProgress;
+
+  /// Occured error in the [Player].
+  late Stream<PlayerError?> error;
+
   /// Closes all the stream controllers.
   void dispose() {
     mediasController.close();
@@ -531,6 +549,8 @@ class _PlayerStreams {
     positionController.close();
     durationController.close();
     indexController.close();
+    downloadProgressController.close();
+    errorController.close();
   }
 
   _PlayerStreams() {
@@ -541,6 +561,8 @@ class _PlayerStreams {
     position = positionController.stream;
     duration = durationController.stream;
     index = indexController.stream;
+    downloadProgress = downloadProgressController.stream;
+    error = errorController.stream;
   }
 
   /// Internally used [StreamController].
@@ -569,4 +591,35 @@ class _PlayerStreams {
 
   /// Internally used [StreamController].
   final StreamController<int> indexController = StreamController.broadcast();
+
+  /// Internally used [StreamController].
+  final StreamController<double> downloadProgressController =
+      StreamController.broadcast();
+
+  /// Internally used [StreamController].
+  final StreamController<PlayerError?> errorController =
+      StreamController.broadcast();
+}
+
+/// Various [Player] error codes.
+enum PlayerErrorCode {
+  unknown,
+  aborted,
+  networkError,
+  decodingError,
+  sourceNotSupported
+}
+
+/// Class representing a [Player] error.
+class PlayerError {
+  /// Error code.
+  final PlayerErrorCode code;
+
+  /// Error message.
+  final String message;
+
+  PlayerError(this.code, this.message);
+
+  @override
+  String toString() => 'PlayerError: ($code) $message';
 }

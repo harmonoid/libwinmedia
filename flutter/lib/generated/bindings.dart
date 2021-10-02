@@ -311,24 +311,26 @@ class LWM {
   }
 
   late final _PlayerSetIsShuffling_ptr =
-      _lookup<ffi.NativeFunction<_c_PlayerSetIsShuffling>>('PlayerSetIsShuffling');
+      _lookup<ffi.NativeFunction<_c_PlayerSetIsShuffling>>(
+          'PlayerSetIsShuffling');
   late final _dart_PlayerSetIsShuffling _PlayerSetIsShuffling =
       _PlayerSetIsShuffling_ptr.asFunction<_dart_PlayerSetIsShuffling>();
 
-  void PlayerSetAutoRepeat(
+  void PlayerSetIsAutoRepeat(
     int player_id,
     bool enabled,
   ) {
-    return _PlayerSetAutoRepeat(
+    return _PlayerSetIsAutoRepeat(
       player_id,
       enabled ? 1 : 0,
     );
   }
 
-  late final _PlayerSetAutoRepeat_ptr =
-      _lookup<ffi.NativeFunction<_c_PlayerSetIsLooping>>('PlayerSetAutoRepeat');
-  late final _dart_PlayerSetIsLooping _PlayerSetAutoRepeat =
-      _PlayerSetAutoRepeat_ptr.asFunction<_dart_PlayerSetAutoRepeat>();
+  late final _PlayerSetIsAutoRepeat_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerSetIsLooping>>(
+          'PlayerSetIsAutoRepeat');
+  late final _dart_PlayerSetIsLooping _PlayerSetIsAutoRepeat =
+      _PlayerSetIsAutoRepeat_ptr.asFunction<_dart_PlayerSetIsAutoRepeat>();
 
   int PlayerGetPosition(
     int player_id,
@@ -395,7 +397,8 @@ class LWM {
       _lookup<ffi.NativeFunction<_c_PlayerGetDownloadProgress>>(
           'PlayerGetDownloadProgress');
   late final _dart_PlayerGetDownloadProgress _PlayerGetDownloadProgress =
-      _PlayerGetDownloadProgress_ptr.asFunction<_dart_PlayerGetDownloadProgress>();
+      _PlayerGetDownloadProgress_ptr.asFunction<
+          _dart_PlayerGetDownloadProgress>();
 
   bool PlayerIsAutoplay(
     int player_id,
@@ -439,19 +442,19 @@ class LWM {
   late final _dart_PlayerIsAutoRepeat _PlayerIsAutoRepeat =
       _PlayerIsLooping_ptr.asFunction<_dart_PlayerIsAutoRepeat>();
 
-  bool PlayerIsShuffleEnabled(
+  bool PlayerIsShuffling(
     int player_id,
   ) {
-    return _PlayerIsShuffleEnabled(
+    return _PlayerIsShuffling(
           player_id,
         ) !=
         0;
   }
 
-  late final _PlayerIsShuffleEnabled_ptr =
-      _lookup<ffi.NativeFunction<_c_PlayerIsShuffleEnabled>>('PlayerIsShuffleEnabled');
-  late final _dart_PlayerIsShuffleEnabled _PlayerIsShuffleEnabled =
-      _PlayerIsLooping_ptr.asFunction<_dart_PlayerIsShuffleEnabled>();
+  late final _PlayerIsShuffling_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerIsShuffling>>('PlayerIsShuffling');
+  late final _dart_PlayerIsShuffling _PlayerIsShuffling =
+      _PlayerIsLooping_ptr.asFunction<_dart_PlayerIsShuffling>();
 
   void PlayerSetIsPlayingEventHandler(
     int player_id,
@@ -588,6 +591,41 @@ class LWM {
   late final _dart_PlayerSetIndexEventHandler _PlayerSetIndexEventHandler =
       _PlayerSetIndexEventHandler_ptr.asFunction<
           _dart_PlayerSetIndexEventHandler>();
+
+  void PlayerSetDownloadProgressEventHandler(
+    int player_id,
+    ffi.Pointer<ffi.NativeFunction<_typedefC_5>> callback,
+  ) {
+    return _PlayerSetDownloadProgressEventHandler(
+      player_id,
+      callback,
+    );
+  }
+
+  late final _PlayerSetDownloadProgressEventHandler_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerSetDownloadProgressEventHandler>>(
+          'PlayerSetDownloadProgressEventHandler');
+  late final _dart_PlayerSetDownloadProgressEventHandler
+      _PlayerSetDownloadProgressEventHandler =
+      _PlayerSetDownloadProgressEventHandler_ptr.asFunction<
+          _dart_PlayerSetDownloadProgressEventHandler>();
+
+  void PlayerSetErrorEventHandler(
+    int player_id,
+    ffi.Pointer<ffi.NativeFunction<_typedefC_11>> callback,
+  ) {
+    return _PlayerSetErrorEventHandler(
+      player_id,
+      callback,
+    );
+  }
+
+  late final _PlayerSetErrorEventHandler_ptr =
+      _lookup<ffi.NativeFunction<_c_PlayerSetErrorEventHandler>>(
+          'PlayerSetErrorEventHandler');
+  late final _dart_PlayerSetErrorEventHandler _PlayerSetErrorEventHandler =
+      _PlayerSetErrorEventHandler_ptr.asFunction<
+          _dart_PlayerSetErrorEventHandler>();
 
   void PlayerNativeControlsCreate(
     int player_id,
@@ -1073,12 +1111,12 @@ typedef _dart_PlayerSetIsShuffling = void Function(
   int shuffling,
 );
 
-typedef _c_PlayerSetAutoRepeat = ffi.Void Function(
+typedef _c_PlayerSetIsAutoRepeat = ffi.Void Function(
   ffi.Int32 player_id,
   ffi.Uint8 enabled,
 );
 
-typedef _dart_PlayerSetAutoRepeat = void Function(
+typedef _dart_PlayerSetIsAutoRepeat = void Function(
   int player_id,
   int enabled,
 );
@@ -1147,14 +1185,13 @@ typedef _dart_PlayerIsAutoRepeat = int Function(
   int player_id,
 );
 
-typedef _c_PlayerIsShuffleEnabled = ffi.Uint8 Function(
+typedef _c_PlayerIsShuffling = ffi.Uint8 Function(
   ffi.Int32 player_id,
 );
 
-typedef _dart_PlayerIsShuffleEnabled = int Function(
+typedef _dart_PlayerIsShuffling = int Function(
   int player_id,
 );
-
 
 typedef _typedefC_1 = ffi.Void Function(
   ffi.Uint8,
@@ -1266,6 +1303,26 @@ typedef _c_PlayerSetIndexEventHandler = ffi.Void Function(
 typedef _dart_PlayerSetIndexEventHandler = void Function(
   int player_id,
   ffi.Pointer<ffi.NativeFunction<_typedefC_8>> callback,
+);
+
+typedef _c_PlayerSetDownloadProgressEventHandler = ffi.Void Function(
+  ffi.Int32 player_id,
+  ffi.Pointer<ffi.NativeFunction<_typedefC_5>> callback,
+);
+
+typedef _dart_PlayerSetDownloadProgressEventHandler = void Function(
+  int player_id,
+  ffi.Pointer<ffi.NativeFunction<_typedefC_5>> callback,
+);
+
+typedef _c_PlayerSetErrorEventHandler = ffi.Void Function(
+  ffi.Int32 player_id,
+  ffi.Pointer<ffi.NativeFunction<_typedefC_11>> callback,
+);
+
+typedef _dart_PlayerSetErrorEventHandler = void Function(
+  int player_id,
+  ffi.Pointer<ffi.NativeFunction<_typedefC_11>> callback,
 );
 
 typedef _typedefC_9 = ffi.Void Function(
@@ -1384,6 +1441,11 @@ typedef _dart_TagsExtractThumbnail = void Function(
 
 typedef _typedefC_10 = ffi.Void Function(
   ffi.Int32,
+);
+
+typedef _typedefC_11 = ffi.Void Function(
+  ffi.Int32,
+  ffi.Pointer<ffi.Utf8>,
 );
 
 typedef _c_NativeControlsCreate = ffi.Void Function(
