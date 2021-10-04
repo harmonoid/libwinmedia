@@ -23,7 +23,7 @@ class Player {
   bool is_completed() const { return is_completed_; }
   int32_t position() const { return position_; }
   int32_t duration() const { return duration_; }
-  int32_t buffering_position() const { return buffering_position_; }
+  float download_progress() const { return download_progress_; }
   float volume() const { return volume_; }
   float rate() const { return rate_; }
   int32_t index() const { return index_; }
@@ -35,6 +35,8 @@ class Player {
   void CloseWindow();
 
   void Open(std::vector<std::string> uris, std::vector<int32_t> ids);
+
+  void Add(std::string uri, int32_t id);
 
   void Play();
 
@@ -72,6 +74,11 @@ class Player {
 
   void SetIndexEventHandler(std::function<void(float)> index_callback);
 
+  void SetDownloadProgressEventHandler(
+      std::function<void(float)> download_progress_callback);
+
+  void SetErrorEventHandler(std::function<void(std::string)> error_callback);
+
   void Run();
 
   webview::webview* webview() const { return webview_.get(); }
@@ -88,8 +95,9 @@ class Player {
   int32_t position_ = 0;
   int32_t duration_ = 0;
   int32_t buffering_position_ = 0;
-  float volume_ = 0.0;
-  float rate_ = 0.0;
+  float download_progress_ = 0.0f;
+  float volume_ = 0.0f;
+  float rate_ = 0.0f;
   std::function<void(bool)> is_playing_callback_ = [](bool) {};
   std::function<void(bool)> is_buffering_callback_ = [](bool) {};
   std::function<void(bool)> is_completed_callback_ = [](bool) {};
@@ -99,6 +107,8 @@ class Player {
   std::function<void(float)> volume_callback_ = [](float) {};
   std::function<void(float)> rate_callback_ = [](float) {};
   std::function<void(int32_t)> index_callback_ = [](int32_t) {};
+  std::function<void(float)> download_progress_callback_ = [](float) {};
+  std::function<void(std::string)> error_callback_ = [](std::string) {};
   std::string source_ =
       std::filesystem::temp_directory_path().string() + "/source.html";
   std::unique_ptr<std::thread> thread_ = nullptr;
@@ -148,13 +158,13 @@ class Player {
       "       isBuffering(true);"
       "   });"
       "   player.addEventListener('timeupdate', (event) => {"
-      "       position(Math.round(event.target.currentTime * 1000));" 
+      "       position(Math.round(event.target.currentTime * 1000));"
       "   });"
       "   player.addEventListener('progress', (event) => {"
-      "       var duration = myAudio.duration; " 
-      "       if (myAudio.buffered.length > 0) { " 
-      "           buffering(myAudio.buffered.end(myAudio.buffered.length - 1) * 1000);"
-      "       } " 
+      "       if (player.buffered.length > 0) {"
+      "           downloadProgress(player.buffered.end(player.buffered.length "
+      "- 1) / event.target.duration);"
+      "       }"
       "   });"
       "   player.addEventListener('durationchange', (event) => {"
       "       duration(Math.round(event.target.duration * 1000));"
@@ -168,6 +178,9 @@ class Player {
       "   });"
       "   player.addEventListener('ratechange', (event) => {"
       "       rate(Math.round(event.target.playbackRate * 1000) / 1000);"
+      "   });"
+      "   player.addEventListener('error', (event) => {"
+      "       error(event.message);"
       "   });"
       "   let button = document.createElement('button');"
       "   window.onload = () => initialized(null);"
@@ -233,11 +246,11 @@ Player::Player(int32_t id, bool show_window = false,
     }
     return "";
   });
-  webview_->bind("buffering", [=](std::string event) -> std::string {
+  webview_->bind("downloadProgress", [=](std::string event) -> std::string {
     if (event == "[null]") return "";
     try {
-      buffering_position_ = std::stoi(event.substr(1, event.size() - 2));
-      buffering_callback_(buffering_position_);
+      download_progress_ = std::stof(event.substr(1, event.size() - 2));
+      download_progress_callback_(download_progress_);
     } catch (...) {
     }
     return "";
@@ -260,7 +273,15 @@ Player::Player(int32_t id, bool show_window = false,
     }
     return "";
   });
+  webview_->bind("error", [=](std::string event) -> std::string {
+    try {
+      error_callback_(event.substr(1, event.size() - 2));
+    } catch (...) {
+    }
+    return "";
+  });
   webview_->navigate("file://" + source_);
+  webview_->eval("button.click();");
   webview_->set_title(window_title);
   webview_->set_size(480, 360, WEBVIEW_HINT_NONE);
   if (!show_window) {
@@ -287,6 +308,13 @@ void Player::Open(std::vector<std::string> uris, std::vector<int32_t> ids) {
       "player.src = '" +
       std::string(media_uris_.front().begin(), media_uris_.front().end()) +
       "';");
+}
+
+void Player::Add(std::string uri, int32_t id) {
+  EnsureFuture();
+  index_ = 0;
+  media_ids_.emplace_back(id);
+  media_uris_.emplace_back(uri);
 }
 
 void Player::Play() {
@@ -378,6 +406,16 @@ void Player::SetRateEventHandler(std::function<void(float)> rate_callback) {
 
 void Player::SetIndexEventHandler(std::function<void(float)> index_callback) {
   index_callback_ = index_callback;
+}
+
+void Player::SetDownloadProgressEventHandler(
+    std::function<void(float)> download_progress_callback) {
+  download_progress_callback_ = download_progress_callback;
+};
+
+void Player::SetErrorEventHandler(
+    std::function<void(std::string)> error_callback) {
+  error_callback_ = error_callback;
 }
 
 void Player::Run() { webview_->run(); }
