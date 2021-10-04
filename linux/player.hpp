@@ -1,6 +1,7 @@
 #ifndef UNICODE
 #define UNICODE
 #endif
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <future>
@@ -29,6 +30,9 @@ class Player {
   int32_t index() const { return index_; }
   std::vector<int32_t>& media_ids() { return media_ids_; }
   std::vector<std::string>& media_uris() { return media_uris_; }
+  bool is_autorepeat() const { return is_autorepeat_; }
+  bool is_looping() const { return is_looping_; }
+  bool is_shuffling() const { return is_shuffling_; }
 
   void ShowWindow();
 
@@ -55,6 +59,12 @@ class Player {
   void SetVolume(float volume);
 
   void SetRate(float rate);
+
+  void SetIsAutoRepeat(bool is_autorepeat);
+
+  void SetIsLooping(bool is_looping);
+
+  void SetIsShuffling(bool is_shuffling);
 
   void SetIsPlayingEventHandler(std::function<void(bool)> is_playing_callback);
 
@@ -98,6 +108,9 @@ class Player {
   float download_progress_ = 0.0f;
   float volume_ = 0.0f;
   float rate_ = 0.0f;
+  bool is_autorepeat_ = false;
+  bool is_looping_ = false;
+  bool is_shuffling_ = false;
   std::function<void(bool)> is_playing_callback_ = [](bool) {};
   std::function<void(bool)> is_buffering_callback_ = [](bool) {};
   std::function<void(bool)> is_completed_callback_ = [](bool) {};
@@ -196,6 +209,7 @@ Player::Player(int32_t id, bool show_window = false,
   file.close();
   webview_->bind("initialized", [=](std::string _) -> std::string {
     promise_->set_value();
+    webview_->eval("button.click();");
     return "";
   });
   webview_->bind("isPlaying", [=](std::string event) -> std::string {
@@ -223,7 +237,12 @@ Player::Player(int32_t id, bool show_window = false,
       is_completed_ =
           event.substr(1, event.size() - 2) == "true" ? true : false;
       is_completed_callback_(is_completed_);
-      if (is_completed_) Next();
+      if (is_completed_) {
+        if (is_looping_)
+          Play();
+        else
+          Next();
+      };
     } catch (...) {
     }
     return "";
@@ -281,12 +300,12 @@ Player::Player(int32_t id, bool show_window = false,
     return "";
   });
   webview_->navigate("file://" + source_);
-  webview_->eval("button.click();");
   webview_->set_title(window_title);
   webview_->set_size(480, 360, WEBVIEW_HINT_NONE);
   if (!show_window) {
     gtk_widget_hide(GTK_WIDGET(webview_->window()));
   }
+  srand(time(0));
 }
 
 void Player::ShowWindow() {
@@ -333,15 +352,33 @@ void Player::Stop() {
 }
 
 void Player::Next() {
-  if (index_ >= media_uris_.size() - 1) return;
   EnsureFuture();
-  Jump(++index_);
+  if (index_ >= media_uris_.size() - 1) {
+    if (is_autorepeat_)
+      index_ = -1;
+    else
+      return;
+  }
+  if (!is_shuffling_) {
+    Jump(++index_);
+  } else {
+    Jump(rand() % media_uris_.size());
+  }
 }
 
 void Player::Back() {
-  if (index_ <= 0) return;
   EnsureFuture();
-  Jump(--index_);
+  if (index_ <= 0) {
+    if (is_autorepeat_)
+      index_ = media_uris_.size();
+    else
+      return;
+  }
+  if (!is_shuffling_) {
+    Jump(--index_);
+  } else {
+    Jump(rand() % media_uris_.size());
+  }
 }
 
 void Player::Jump(int32_t index) {
@@ -370,6 +407,21 @@ void Player::SetRate(float rate) {
   EnsureFuture();
   webview_->eval("player.playbackRate = " + std::to_string(rate) + ";");
 }
+
+void Player::SetIsAutoRepeat(bool is_autorepeat) {
+  EnsureFuture();
+  is_autorepeat_ = is_autorepeat;
+};
+
+void Player::SetIsLooping(bool is_looping) {
+  EnsureFuture();
+  is_looping_ = is_looping;
+};
+
+void Player::SetIsShuffling(bool is_shuffling) {
+  EnsureFuture();
+  is_shuffling_ = is_shuffling;
+};
 
 void Player::SetIsPlayingEventHandler(
     std::function<void(bool)> is_playing_callback) {

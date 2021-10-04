@@ -446,7 +446,7 @@ DLLEXPORT void PlayerOpen(int32_t player_id, int32_t size, const char** uris,
   player_id_object.value.as_int32 = player_id;
   Dart_CObject type_object;
   type_object.type = Dart_CObject_kString;
-  type_object.value.as_string = "Open";
+  type_object.value.as_string = const_cast<char*>("Open");
   auto uri_objects = std::unique_ptr<Dart_CObject[]>(
       new Dart_CObject[g_media_players.at(player_id)->media_uris().size()]);
   auto uri_object_refs = std::unique_ptr<Dart_CObject*[]>(
@@ -579,7 +579,63 @@ DLLEXPORT void PlayerAdd(int32_t player_id, const char* uri, int32_t id) {
   g_dart_post_C_object(g_callback_port, &return_object);
 #endif
 #elif __linux__
-// TODO (alexmercerind): Add Linux support.
+  EnsureFuture(player_id);
+  g_media_players.at(player_id)->Pause();
+  g_media_players.at(player_id)->Add(uri, id);
+#ifdef DART_VM
+  Dart_CObject player_id_object;
+  player_id_object.type = Dart_CObject_kInt32;
+  player_id_object.value.as_int32 = player_id;
+  Dart_CObject type_object;
+  type_object.type = Dart_CObject_kString;
+  type_object.value.as_string = const_cast<char*>("Open");
+  auto uri_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_players.at(player_id)->media_uris().size()]);
+  auto uri_object_refs = std::unique_ptr<Dart_CObject*[]>(
+      new Dart_CObject*[g_media_players.at(player_id)->media_uris().size()]);
+  std::vector<std::string> uris_str(
+      g_media_players.at(player_id)->media_uris().size());
+  std::vector<char*> uris_ptr(
+      g_media_players.at(player_id)->media_uris().size());
+  for (int32_t i = 0; i < g_media_players.at(player_id)->media_uris().size();
+       i++) {
+    uris_str[i] = g_media_players.at(player_id)->media_uris()[i];
+    uris_ptr[i] = uris_str[i].data();
+    Dart_CObject* value_object = &uri_objects[i];
+    value_object->type = Dart_CObject_kString;
+    value_object->value.as_string = uris_ptr[i];
+    uri_object_refs[i] = value_object;
+  }
+  Dart_CObject uris_object;
+  uris_object.type = Dart_CObject_kArray;
+  uris_object.value.as_array.length =
+      g_media_players.at(player_id)->media_uris().size();
+  uris_object.value.as_array.values = uri_object_refs.get();
+  auto id_objects = std::unique_ptr<Dart_CObject[]>(
+      new Dart_CObject[g_media_players.at(player_id)->media_ids().size()]);
+  auto id_object_refs = std::unique_ptr<Dart_CObject*[]>(
+      new Dart_CObject*[g_media_players.at(player_id)->media_ids().size()]);
+  for (int32_t i = 0; i < g_media_players.at(player_id)->media_ids().size();
+       i++) {
+    Dart_CObject* value_object = &id_objects[i];
+    value_object->type = Dart_CObject_kInt32;
+    value_object->value.as_int32 =
+        g_media_players.at(player_id)->media_ids()[i];
+    id_object_refs[i] = value_object;
+  }
+  Dart_CObject ids_object;
+  ids_object.type = Dart_CObject_kArray;
+  ids_object.value.as_array.length =
+      g_media_players.at(player_id)->media_ids().size();
+  ids_object.value.as_array.values = id_object_refs.get();
+  Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                   &uris_object, &ids_object};
+  Dart_CObject return_object;
+  return_object.type = Dart_CObject_kArray;
+  return_object.value.as_array.length = 4;
+  return_object.value.as_array.values = value_objects;
+  g_dart_post_C_object(g_callback_port, &return_object);
+#endif
 #endif
 }
 
@@ -726,15 +782,17 @@ DLLEXPORT void PlayerSetIsLooping(int32_t player_id, bool looping) {
 #ifdef _WIN32
   g_media_players.at(player_id).IsLoopingEnabled(looping);
 #elif __linux__
-// TODO (alexmercerind): Add Linux support.
+  EnsureFuture(player_id);
+  g_media_players.at(player_id)->SetIsLooping(looping);
 #endif
 }
 
-DLLEXPORT void PlayerSetIsAutoRepeat(int32_t player_id, bool enabled) {
+DLLEXPORT void PlayerSetIsAutoRepeat(int32_t player_id, bool autorepeat) {
 #ifdef _WIN32
-  g_media_playback_lists.at(player_id).AutoRepeatEnabled(enabled);
+  g_media_playback_lists.at(player_id).AutoRepeatEnabled(autorepeat);
 #elif __linux__
-// TODO: Add Linux support.
+  EnsureFuture(player_id);
+  g_media_players.at(player_id)->SetIsAutoRepeat(autorepeat);
 #endif
 }
 
@@ -742,7 +800,8 @@ DLLEXPORT void PlayerSetIsShuffling(int32_t player_id, bool shuffling) {
 #ifdef _WIN32
   g_media_playback_lists.at(player_id).ShuffleEnabled(shuffling);
 #elif __linux__
-// TODO (alexmercerind): Add Linux support.
+  EnsureFuture(player_id);
+  g_media_players.at(player_id)->SetIsShuffling(shuffling);
 #endif
 }
 
@@ -777,8 +836,7 @@ DLLEXPORT float PlayerGetAudioBalance(int32_t player_id) {
 #ifdef _WIN32
   return g_media_players.at(player_id).AudioBalance();
 #elif __linux__
-  // TODO (alexmercerind): Add Linux support.
-  return 0;
+  return 1.0f;
 #endif
 }
 
@@ -795,8 +853,7 @@ DLLEXPORT bool PlayerIsAutoplay(int32_t player_id) {
 #ifdef _WIN32
   return g_media_players.at(player_id).AutoPlay();
 #elif __linux__
-  // TODO (alexmercerind): Add Linux support.
-  return 0;
+  return false;
 #endif
 }
 
@@ -804,8 +861,8 @@ DLLEXPORT bool PlayerIsLooping(int32_t player_id) {
 #ifdef _WIN32
   return g_media_players.at(player_id).IsLoopingEnabled();
 #elif __linux__
-  // TODO (alexmercerind): Add Linux support.
-  return 0;
+  EnsureFuture(player_id);
+  return g_media_players.at(player_id)->is_looping();
 #endif
 }
 
@@ -813,8 +870,8 @@ DLLEXPORT bool PlayerIsAutoRepeat(int32_t player_id) {
 #ifdef _WIN32
   return g_media_playback_lists.at(player_id).AutoRepeatEnabled();
 #elif __linux__
-  // TODO: Add Linux support.
-  return 0;
+  EnsureFuture(player_id);
+  return g_media_players.at(player_id)->is_autorepeat();
 #endif
 }
 
@@ -822,8 +879,8 @@ DLLEXPORT bool PlayerIsShuffling(int32_t player_id) {
 #ifdef _WIN32
   return g_media_playback_lists.at(player_id).ShuffleEnabled();
 #elif __linux__
-  // TODO: Add Linux support.
-  return 0;
+  EnsureFuture(player_id);
+  return g_media_players.at(player_id)->is_shuffling();
 #endif
 }
 
@@ -917,7 +974,7 @@ DLLEXPORT void PlayerSetIsPlayingEventHandler(
         player_id_object.value.as_int32 = player_id;
         Dart_CObject type_object;
         type_object.type = Dart_CObject_kString;
-        type_object.value.as_string = "IsPlaying";
+        type_object.value.as_string = const_cast<char*>("IsPlaying");
         Dart_CObject is_playing_object;
         is_playing_object.type = Dart_CObject_kBool;
         is_playing_object.value.as_bool = is_playing;
@@ -993,7 +1050,7 @@ DLLEXPORT void PlayerSetIsCompletedEventHandler(
         player_id_object.value.as_int32 = player_id;
         Dart_CObject type_object;
         type_object.type = Dart_CObject_kString;
-        type_object.value.as_string = "IsCompleted";
+        type_object.value.as_string = const_cast<char*>("IsCompleted");
         Dart_CObject is_completed_object;
         is_completed_object.type = Dart_CObject_kBool;
         is_completed_object.value.as_bool = is_completed;
@@ -1070,7 +1127,7 @@ DLLEXPORT void PlayerSetIsBufferingEventHandler(
         player_id_object.value.as_int32 = player_id;
         Dart_CObject type_object;
         type_object.type = Dart_CObject_kString;
-        type_object.value.as_string = "IsBuffering";
+        type_object.value.as_string = const_cast<char*>("IsBuffering");
         Dart_CObject is_buffering_object;
         is_buffering_object.type = Dart_CObject_kBool;
         is_buffering_object.value.as_bool = is_buffering;
@@ -1124,7 +1181,7 @@ DLLEXPORT void PlayerSetVolumeEventHandler(int32_t player_id,
         player_id_object.value.as_int32 = player_id;
         Dart_CObject type_object;
         type_object.type = Dart_CObject_kString;
-        type_object.value.as_string = "Volume";
+        type_object.value.as_string = const_cast<char*>("Volume");
         Dart_CObject volume_object;
         volume_object.type = Dart_CObject_kDouble;
         volume_object.value.as_double = volume;
@@ -1178,7 +1235,7 @@ DLLEXPORT void PlayerSetRateEventHandler(int32_t player_id,
     player_id_object.value.as_int32 = player_id;
     Dart_CObject type_object;
     type_object.type = Dart_CObject_kString;
-    type_object.value.as_string = "Rate";
+    type_object.value.as_string = const_cast<char*>("Rate");
     Dart_CObject rate_object;
     rate_object.type = Dart_CObject_kDouble;
     rate_object.value.as_double = rate;
@@ -1234,7 +1291,7 @@ DLLEXPORT void PlayerSetPositionEventHandler(
         player_id_object.value.as_int32 = player_id;
         Dart_CObject type_object;
         type_object.type = Dart_CObject_kString;
-        type_object.value.as_string = "Position";
+        type_object.value.as_string = const_cast<char*>("Position");
         Dart_CObject position_object;
         position_object.type = Dart_CObject_kInt32;
         position_object.value.as_int32 = position;
@@ -1290,7 +1347,7 @@ DLLEXPORT void PlayerSetDurationEventHandler(
         player_id_object.value.as_int32 = player_id;
         Dart_CObject type_object;
         type_object.type = Dart_CObject_kString;
-        type_object.value.as_string = "Duration";
+        type_object.value.as_string = const_cast<char*>("Duration");
         Dart_CObject duration_object;
         duration_object.type = Dart_CObject_kInt32;
         duration_object.value.as_int32 = duration;
@@ -1345,7 +1402,7 @@ DLLEXPORT void PlayerSetIndexEventHandler(int32_t player_id,
         player_id_object.value.as_int32 = player_id;
         Dart_CObject type_object;
         type_object.type = Dart_CObject_kString;
-        type_object.value.as_string = "Index";
+        type_object.value.as_string = const_cast<char*>("Index");
         Dart_CObject index_object;
         index_object.type = Dart_CObject_kInt32;
         index_object.value.as_int32 = index;
@@ -1393,7 +1450,31 @@ DLLEXPORT void PlayerSetDownloadProgressEventHandler(
 #endif
       });
 #elif __linux__
-// TODO (alexmercerind): Add Linux support.
+  g_media_players.at(player_id)->SetDownloadProgressEventHandler(
+      [=](float download_progress) {
+#ifdef DART_VM
+        Dart_CObject player_id_object;
+        player_id_object.type = Dart_CObject_kInt32;
+        player_id_object.value.as_int32 = player_id;
+        Dart_CObject type_object;
+        type_object.type = Dart_CObject_kString;
+        type_object.value.as_string = const_cast<char*>("DownloadProgress");
+        Dart_CObject download_progress_object;
+        download_progress_object.type = Dart_CObject_kDouble;
+        download_progress_object.value.as_double =
+            static_cast<double>(download_progress);
+        Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                         &download_progress_object};
+        Dart_CObject return_object;
+        return_object.type = Dart_CObject_kArray;
+        return_object.value.as_array.length = 3;
+        return_object.value.as_array.values = value_objects;
+        g_dart_post_C_object(g_callback_port, &return_object);
+#else
+        (*callback)(download_progress);
+
+#endif
+      });
 #endif
 }
 
@@ -1434,7 +1515,31 @@ DLLEXPORT void PlayerSetErrorEventHandler(int32_t player_id,
 #endif
       });
 #elif __linux__
-// TODO (alexmercerind): Add Linux support.
+  g_media_players.at(player_id)->SetErrorEventHandler([=](std::string error) {
+#ifdef DART_VM
+    Dart_CObject player_id_object;
+    player_id_object.type = Dart_CObject_kInt32;
+    player_id_object.value.as_int32 = player_id;
+    Dart_CObject type_object;
+    type_object.type = Dart_CObject_kString;
+    type_object.value.as_string = const_cast<char*>("Error");
+    Dart_CObject error_code_object;
+    error_code_object.type = Dart_CObject_kInt32;
+    error_code_object.value.as_int32 = 0;
+    Dart_CObject error_message_object;
+    error_message_object.type = Dart_CObject_kString;
+    error_message_object.value.as_string = const_cast<char*>(error.c_str());
+    Dart_CObject* value_objects[] = {&player_id_object, &type_object,
+                                     &error_code_object, &error_message_object};
+    Dart_CObject return_object;
+    return_object.type = Dart_CObject_kArray;
+    return_object.value.as_array.length = 4;
+    return_object.value.as_array.values = value_objects;
+    g_dart_post_C_object(g_callback_port, &return_object);
+#else
+    (*callback)(0, const_cast<char*>(error.c_str()));
+#endif
+  });
 #endif
 }
 
