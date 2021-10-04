@@ -228,8 +228,8 @@ class Player {
 
   void SetIsLooping(bool looping) { Internal::PlayerSetAutoplay(id_, looping); }
 
-  void SetAutoRepeat(bool autorepeat) {
-    Internal::PlayerSetAutoRepeat(id_, autorepeat);
+  void SetIsAutoRepeat(bool autorepeat) {
+    Internal::PlayerSetIsAutoRepeat(id_, autorepeat);
   }
 
   int32_t GetPosition() { return Internal::PlayerGetPosition(id_); }
