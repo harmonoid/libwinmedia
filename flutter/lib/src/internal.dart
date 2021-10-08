@@ -110,7 +110,7 @@ abstract class LWM {
             }
           case 'Error':
             {
-              var error = PlayerError(event[2], event[3]);
+              var error = PlayerError(PlayerErrorCode.values[event[2]], event[3]);
               players[id]!.streams.errorController.add(
                     error,
                   );
