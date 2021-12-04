@@ -204,7 +204,6 @@ Player::Player(int32_t id, bool show_window = false,
                std::string window_title = "libwinmedia")
     : id_(id) {
   auto m_window = gtk_window_new(show_window ? GTK_WINDOW_TOPLEVEL : GTK_WINDOW_POPUP);
-  gtk_window_set_title(GTK_WINDOW(m_window), window_title.c_str());
   if (show_window) {
     gtk_window_resize(GTK_WINDOW(m_window), 480, 360);
   } else {
@@ -212,6 +211,7 @@ Player::Player(int32_t id, bool show_window = false,
   }
 
   webview_ = std::make_unique<webview::webview>(true, m_window);
+  webview_->set_title(window_title);
   if (!show_window) {
     gtk_widget_hide(GTK_WIDGET(webview_->window()));
   }
