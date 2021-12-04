@@ -125,8 +125,7 @@ class Player {
   std::string source_ =
       std::filesystem::temp_directory_path().string() + "/source.html";
   std::unique_ptr<std::thread> thread_ = nullptr;
-  std::unique_ptr<webview::webview> webview_ =
-      std::make_unique<webview::webview>(true, nullptr);
+  std::unique_ptr<webview::webview> webview_ = nullptr;
   std::unique_ptr<std::promise<void>> promise_ =
       std::make_unique<std::promise<void>>();
   bool initialized_ = false;
@@ -204,6 +203,19 @@ class Player {
 Player::Player(int32_t id, bool show_window = false,
                std::string window_title = "libwinmedia")
     : id_(id) {
+  auto m_window = gtk_window_new(show_window ? GTK_WINDOW_TOPLEVEL : GTK_WINDOW_POPUP);
+  gtk_window_set_title(GTK_WINDOW(m_window), window_title.c_str());
+  if (show_window) {
+    gtk_window_resize(GTK_WINDOW(m_window), 480, 360);
+  } else {
+    gtk_window_resize(GTK_WINDOW(m_window), 1, 1);
+  }
+
+  webview_ = std::make_unique<webview::webview>(true, m_window);
+  if (!show_window) {
+    gtk_widget_hide(GTK_WIDGET(webview_->window()));
+  }
+
   std::fstream file(source_, std::ios::out);
   file << Player::kPlayerSource;
   file.close();
@@ -300,11 +312,6 @@ Player::Player(int32_t id, bool show_window = false,
     return "";
   });
   webview_->navigate("file://" + source_);
-  webview_->set_title(window_title);
-  webview_->set_size(480, 360, WEBVIEW_HINT_NONE);
-  if (!show_window) {
-    gtk_widget_hide(GTK_WIDGET(webview_->window()));
-  }
   srand(time(0));
 }
 
