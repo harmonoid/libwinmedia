@@ -9,7 +9,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <charconv>
 
 #include "../external/webview/webview.h"
 
@@ -408,27 +407,12 @@ void Player::Seek(int32_t position) {
 
 void Player::SetVolume(float volume) {
   EnsureFuture();
-
-  std::array<char, 32> buf;
-  auto result = std::to_chars(buf.data(), buf.data() + buf.size(), volume);
-  if (result.ec == std::errc()) {
-    auto str = std::string(buf.data(), result.ptr - buf.data());
-    webview_->eval("player.volume = " + str + ";");
-  } else {
-    // handle the error
-  }
+  webview_->eval("player.volume = " + std::to_string(volume) + ";");
 }
 
 void Player::SetRate(float rate) {
   EnsureFuture();
-  std::array<char, 32> buf;
-  auto result = std::to_chars(buf.data(), buf.data() + buf.size(), rate);
-  if (result.ec == std::errc()) {
-    auto str = std::string(buf.data(), result.ptr - buf.data());
-    webview_->eval("player.playbackRate = " + str + ";");
-  } else {
-    // handle the error
-  }
+  webview_->eval("player.playbackRate = " + std::to_string(rate) + ";");
 }
 
 void Player::SetIsAutoRepeat(bool is_autorepeat) {
