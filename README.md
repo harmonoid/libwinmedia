@@ -4,7 +4,7 @@
 ## ⚠️ Deprecated
 
 The project is now archived. Reasons are documented below:
-- **Inefficient Linux support:** I had few (personal) reasons because of which my media URIs were not playing in `GStreamer`, so I decided to summon a `WebKit` instance using [webview.h](https://github.com/webview/webview) to make a basic JS interop setup for using WebAudio API (which itself is based on GStreamer in WebKitGTK). A good advantage that Flutter provides over other electron.js like alternatives is that it doesn't start a webview instance / JavaScript runtime, but using this plugin puts Flutter's those advantages to no use.
+- **Inefficient Linux support:** I had few (personal) reasons because of which my media URIs were not playing in `GStreamer`, so I decided to summon a `WebKit` instance using [webview.h](https://github.com/webview/webview) to make a basic JS interop setup for using WebAudio API (which itself is based on GStreamer in WebKitGTK). A good advantage that Flutter provides over other electron.js like alternatives is that it doesn't start a webview instance / JavaScript runtime, but using this plugin puts Flutter's those advantages to no use. This also makes us unable to add various crucial features like audio device selection/enumeration or equalizer etc. in future because of limited set of WebAudio APIs.
 - **Unnecessary abstraction:** As I said Linux support is not worth using, it puts Windows implementation to no use aswell. The WinRT APIs that this library exposes in a C like interface can be used directly in the project because they're already very user friendly & easy to integrate. Using this library on Windows just adds another layer of abstraction.
 - **Unsafe:** Using library on certain language/locales will cause crashes, since it heavily uses `std::stof` and `std::stoi` when doing JS interop. It is both inefficient and unsafe.
 - **No backward compatibility:** The library is only usable on later Windows 10 versions or higher. A project targetting a very small market share isn't worth maintaining.
@@ -25,7 +25,7 @@ A very simple example can be as follows.
 #include "libwinmedia/libwinmedia.hpp"
 
 int32_t main(int32_t ac, const char** av) {
-  using namespace std;
+  using namespace std; 
   using namespace lwm;
   if (ac < 2) {
     cout << "No URI provided.\n"
