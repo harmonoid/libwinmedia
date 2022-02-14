@@ -1,6 +1,20 @@
 <h1 align="center"><a href="https://github.com/libwinmedia/libwinmedia">libwinmedia</a></h1>
 <h4 align="center">A cross-platform media playback library for C/C++ & Flutter with good number of features.</h4>
 
+## ⚠️ Deprecated
+
+The project is now archived. Reasons are documented below:
+- **Inefficient Linux support:** I had few (personal) reasons because of which my media URIs were not playing in `GStreamer`, so I decided to summon a `WebKit` instance using [webview.h](https://github.com/webview/webview) to make a basic JS interop setup for using WebAudio API (which itself is based on GStreamer in WebKitGTK). A good advantage that Flutter provides over other electron.js like alternatives is that it doesn't start a webview instance / JavaScript runtime, but using this plugin puts Flutter's those advantages to no use.
+- **Unnecessary abstraction:** As I said Linux support is not worth using, it puts Windows implementation to no use aswell. The WinRT APIs that this library exposes in a C like interface can be used directly in the project because they're already very user friendly & easy to integrate. Using this library on Windows just adds another layer of abstraction.
+- **Unsafe:** Using library on certain language/locales will cause crashes, since it heavily uses `std::stof` and `std::stoi` when doing JS interop. It is both inefficient and unsafe.
+- **No backward compatibility:** The library is only usable on later Windows 10 versions or higher. A project targetting a very small market share isn't worth maintaining.
+- **No embedded Linux support:** The library cannot be used on non-GTK Flutter embedders like flutter-pi etc. A lot of questions/issues have been made about this & it is not possible unless one decides to rewrite Linux implementation. 
+
+The project was started as an internal Harmonoid dependency to provide Windows/Linux support for the time-being, while I was looking for other libraries to settle on. Now that it is no longer used & current implementation isn't _good enough_, I don't see any point in adding features, fixing bugs etc. Thus, I have decided to discontinue this project.
+You are free to fork the project or use the code as allowed by the MIT license (which can be found in the [LICENSE](https://github.com/harmonoid/libwinmedia/blob/master/LICENSE) file).
+
+Thankyou.
+
 ## Example
 
 A very simple example can be as follows.
